@@ -6,6 +6,7 @@ local module = {
         Inventory = {
                Burger =  {
                         Name = "Burger",
+                        Amount = 1,
                         Upgrades = {}
                 }
         },
