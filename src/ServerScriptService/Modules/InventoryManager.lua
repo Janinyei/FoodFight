@@ -15,10 +15,6 @@ function InventoryManager:AddItem(Player:Player,
     Data:{Item:string, Amount: number?, Upgrades: { [string]: any }}
 )
     local PlrData = DataManager:GetData(Player)
-    if not PlrData or not PlrData.Inventory then
-        warn(`[InventoryManager] invalid inventory: {Player.Name}`)
-        return
-    end
 
     local existing = PlrData.Inventory[Data.Item]
     if existing then
