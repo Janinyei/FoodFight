@@ -10,7 +10,6 @@ local module = {
                 }
         },
       
-        Food = {},
         Settings = {
             Sound = true,
             Music = true,

@@ -53,9 +53,8 @@ function Core:Init(ModulesToLoad : Folder)
     end
     
     self._initialized = true
+    end
 end
-end
-
 
 function Core:Start()
     if not self._initialized then

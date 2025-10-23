@@ -1,6 +1,6 @@
-local FoodMetaData = {
+return {
     Burger = {
-        Type = "Normal", --normal projectile
+        HitBehavior = "Normal", --normal projectile
         BaseSpeed = 10, --actual velocity
         BaseDamage = 5,
         KnockbackForce = 0, 
@@ -8,8 +8,13 @@ local FoodMetaData = {
 
     },
 
+    Grapes = {},
+    
+
+    Tomato = {},
+
     Watermelon = {
-        Type = "Blast", --explosive projectile
+        HitBehavior = "Blast", --explosive projectile
         BaseSpeed = 10,
         BaseDamage = 15,
         BlastRadius = 10,
@@ -17,15 +22,6 @@ local FoodMetaData = {
         KnockbackDuration = 0.5,
 
     },
-
-    
-
-
-
-
 }
 
 
-
-
-return FoodMetaData
