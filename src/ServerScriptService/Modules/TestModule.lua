@@ -1,13 +1,11 @@
-local Core = require(game.ReplicatedStorage.Common.Core)
+local Core = require(game.ReplicatedStorage.Modules.Core)
 local module = {}
+--modules--
+local DataManager
 
-
-function module:Init(Modules) -- First
-    
+function module:Start() 
+    DataManager = Core:Get("DataManager")
+    print("TestModule Start")
+    print(DataManager.Profiles)
 end
-
-function module:Start(Modules) -- Second
-
-end
-
 return module

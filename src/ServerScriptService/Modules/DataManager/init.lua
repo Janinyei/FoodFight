@@ -2,19 +2,13 @@ local Players = game:GetService("Players")
 local ProfileStore = require(script.ProfileStore)
 local DefaultData = require(script.DefaultData)
 local module =  {}
-local PlayerStore = nil
+local PlayerStore : {[Player]: typeof(PlayerStore:StartSessionAsync())}  = nil
 
 function module:Init()
     PlayerStore = ProfileStore.New("TestingData",DefaultData)
     self.Profiles = {}
     
-end
-
-
-function module:Start()
-  
-local Profiles: {[Player]: typeof(PlayerStore:StartSessionAsync())} = {}
-
+       
 local function PlayerAdded(player)
    -- Start a profile session for this player's data:
    local profile = PlayerStore.Mock:StartSessionAsync(`{player.UserId}`, {
@@ -66,8 +60,16 @@ end)
 
 end
 
-function module:GetData()
+
+
+function module:GetData(player : Player)
+    local profile = self.Profiles[player]
     
+    if profile ~= nil then 
+        return profile.Data
+        else
+         warn(`No profile found for {player.DisplayName}`)
+    end
 end
 
 return module

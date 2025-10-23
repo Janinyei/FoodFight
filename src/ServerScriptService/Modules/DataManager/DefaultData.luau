@@ -1,13 +1,22 @@
 local module = {
+        Coins = 50,
+        Level = 0,
+        Exp = 0,
+        Rank = "Novice",
+        Inventory = {
+               Burger =  {
+                        Name = "Burger",
+                        Upgrades = {}
+                }
+        },
+      
+        Food = {},
+        Settings = {
+            Sound = true,
+            Music = true,
+        }
+        
 
-    Currency = {
-        Coins = 0,
-        Gems = 0,
-        Suds = 0
-    },
-    Statistics = {
-        BubblesPopped = 0,  
-    }
 }
 
 return module
