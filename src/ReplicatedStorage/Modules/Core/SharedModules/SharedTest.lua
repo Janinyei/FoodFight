@@ -9,7 +9,6 @@ function SharedTest:Init()
     else
         print("SharedTest Init Client")
     end
-
 end
 
 function SharedTest:Start()
@@ -19,6 +18,5 @@ function SharedTest:Start()
         print("SharedTest Start Client")
     end
 end
-
 
 return SharedTest
