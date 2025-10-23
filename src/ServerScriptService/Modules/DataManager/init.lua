@@ -1,13 +1,26 @@
+--Services--
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
+--Modules--
+local Modules = ReplicatedStorage.Modules
+local Utils = Modules.Utils
+local Signal = require(Utils.Signal)
 local ProfileStore = require(script.ProfileStore)
 local DefaultData = require(script.DefaultData)
+
+
 local module =  {}
+
+--Variables--
 local PlayerStore : {[Player]: typeof(PlayerStore:StartSessionAsync())}  = nil
+
 
 function module:Init()
     PlayerStore = ProfileStore.New("TestingData",DefaultData)
     self.Profiles = {}
-    
+    self.DataLoaded  = Signal.new()
+   
+
        
 local function PlayerAdded(player)
    -- Start a profile session for this player's data:
@@ -33,6 +46,9 @@ local function PlayerAdded(player)
          self.Profiles[player] = profile
          print(`Profile loaded for {player.DisplayName}!`)
          print(profile)
+         
+
+        self.DataLoaded:Fire(player, profile.Data)
       else
          -- The player has left before the profile session started
          profile:EndSession()
@@ -57,7 +73,6 @@ Players.PlayerRemoving:Connect(function(player)
       profile:EndSession()
    end
 end)
-
 end
 
 

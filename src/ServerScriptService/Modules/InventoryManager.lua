@@ -75,27 +75,17 @@ end
 function InventoryManager:Init()
     DataManager = Core:Get("DataManager")
     InventoryAddedEvent = NetRay:RegisterEvent("InventoryAdded",{
-        typeDefinition = {
+       --[[typeDefinition = {
             Inventory = "Dict<string, any>" -- dictionary with string keys, any value
-        }
+        }]] 
     })
     -- replicate the inventory for each player when they join
-
-    local function onPlayerAdded(Player)
-        local PlrData = DataManager:GetData(Player)
-        if not PlrData or not PlrData.Inventory then
-            warn(`[InventoryManager] invalid inventory: {Player.Name}`)
-            return
-        end
-        InventoryAddedEvent:FireClient(Player, {
-            Inventory = PlrData.Inventory
+  
+    DataManager.DataLoaded:Connect(function(player : string, data :  {})
+         InventoryAddedEvent:FireClient(player, {
+            Inventory = data.Inventory
         })
-    end
-
-    Players.PlayerAdded:Connect(onPlayerAdded)
-    for _, Player in Players:GetPlayers() do
-        onPlayerAdded(Player)
-    end
+    end)
 end
 
 return InventoryManager
