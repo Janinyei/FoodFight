@@ -1,6 +1,7 @@
 local SharedTest = {}
 local RunService = game:GetService("RunService")
 
+--[[
 function SharedTest:Init()
     print("SharedTest Init")
 
@@ -18,5 +19,6 @@ function SharedTest:Start()
         print("SharedTest Start Client")
     end
 end
+]]
 
 return SharedTest

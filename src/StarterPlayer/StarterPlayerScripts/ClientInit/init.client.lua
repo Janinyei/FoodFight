@@ -1,3 +1,3 @@
 local Core = require(game.ReplicatedStorage.Modules.Core)
-Core:Init(script.Modules)
+Core:Init(script.Modules.Core)
 Core:Start()

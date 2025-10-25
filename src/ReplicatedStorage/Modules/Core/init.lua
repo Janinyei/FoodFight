@@ -23,6 +23,7 @@ function Core:Init(ModulesToLoad : Folder)
         return
     end
 
+    --Allocates modules in the table before initializing all of them
     --load shared modules first
     local SharedModulesFolder = script.SharedModules
     if SharedModulesFolder then
