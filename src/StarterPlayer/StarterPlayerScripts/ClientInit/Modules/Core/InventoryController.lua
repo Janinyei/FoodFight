@@ -22,15 +22,21 @@ end
 
 function InventoryController:Init()
     self.Inventory = {}
+
+end
+
+function  InventoryController:Start()
     InventoryEvent = Warp.Client("InventoryEvent")
 
      InventoryEvent:Connect(function(inventory: {})
         print(inventory)
+
+        --update UI
     end)
 end
 
-function  InventoryController:Start()
-   
+function InventoryController:EquipItem()
+    
 end
 
 return InventoryController

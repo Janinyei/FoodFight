@@ -22,7 +22,7 @@ function  PurchaseManager:Start()
         --when I say types I mean like "Skin" or "Food" 
 end
 
-function PurchaseManager:PurchaseFood(Name : string)
+function PurchaseManager:PurchaseItem(Player, ItemData)
     
 end
 
