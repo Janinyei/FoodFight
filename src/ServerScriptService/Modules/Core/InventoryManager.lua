@@ -20,8 +20,8 @@ function InventoryManager:Init()
 end
 
 function InventoryManager:Start()
-	DataManager.DataLoaded:Connect(function(player: string, data: {})
-		InventoryEvent:Fire(true, player, data)
+	DataManager.DataLoaded:Connect(function(Player: Player, Data: {})
+		InventoryEvent:Fire(true, Player, Data)
 	end)
 end
 
@@ -31,45 +31,39 @@ function InventoryManager:AddItem(Player: Player, ItemData: { Name: string, Type
 	local ExistingItem = self:GetItem(Player, PlrData, ItemData)
 
 	if ExistingItem then
-		if ExistingItem.Type ~= "Food" then
+		if ExistingItem.Type ~= "Food" and ExistingItem.Amount then
 			ExistingItem.Amount = (ExistingItem.Amount) + (ItemData.Amount or 1)
         else
             warn("Food is not stackable, do not increase.")
         end
 	elseif ExistingItem == nil then --add new item
-			local NewItem = ItemData
-			PlrData.Inventory[ItemData.Name] = NewItem
+		local NewItem = ItemData
+		PlrData.Inventory[ItemData.Type][ItemData.Name] = NewItem
 	end
-		-- replicate to client
-        InventoryEvent:Fire(true, Player, PlrData.Inventory)
-	end
+	-- replicate to client
+    InventoryEvent:Fire(true, Player, PlrData.Inventory)
+end
 
-
-function InventoryManager:RemoveItem(Player: Player, Item: string, RemoveAll: boolean?)
+function InventoryManager:RemoveItem(Player: Player, ItemData:{Name: string, Type:string}, RemoveAll: boolean?)
 	local PlrData = DataManager:GetData(Player)
-	if not PlrData or not PlrData.Inventory then
-		warn(`[InventoryManager] invalid inventory: {Player.Name}`)
+	local ExistingItem = self:GetItem(Player,PlrData,ItemData)
+
+	if not ExistingItem then
+		warn(`[InventoryManager] {Player.Name} does not have {ItemData.Name}`)
 		return
 	end
-
-	local existing = PlrData.Inventory[Item]
-	if not existing then
-		warn(`[InventoryManager] {Player.Name} does not have {Item}`)
-		return
-	end
-
 	-- remove the item if amount is 0 or less, or if RemoveAll
 	-- else decrease the number amount
-	if RemoveAll or (existing.Amount or 1) <= 1 then
-		PlrData.Inventory[Item] = nil
+	if RemoveAll or (ExistingItem.Amount and ExistingItem.Amount <= 1) then
+		PlrData.Inventory[ItemData.Type][ItemData.Name] = nil
 	else
-		existing.Amount = (existing.Amount or 1) - 1
+		ExistingItem.Amount = ExistingItem.Amount and ExistingItem.Amount - 1
 	end
 	-- replicate to client
 	InventoryEvent:Fire(true, Player, PlrData.Inventory)
 end
 
-function InventoryManager:GetItem(Player, PlrData, ItemData: { Name: string, Type: string, Amount: number })
+function InventoryManager:GetItem(Player:Player, PlrData, ItemData: { Name: string, Type: string})
 	if PlrData.Inventory and PlrData.Inventory[ItemData.Type][ItemData.Name] then
 		return PlrData.Inventory[ItemData.Type][ItemData.Name]
 	end
@@ -79,10 +73,6 @@ end
 
 function InventoryManager:HasItem(Player: Player, Item: string)
 	local PlrData = DataManager:GetData(Player)
-	if not PlrData or not PlrData.Inventory then
-		warn(`[InventoryManager] invalid inventory: {Player.Name}`)
-		return false
-	end
 	return PlrData.Inventory[Item] ~= nil
 end
 

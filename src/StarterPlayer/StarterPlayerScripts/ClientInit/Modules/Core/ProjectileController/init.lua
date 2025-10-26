@@ -38,17 +38,18 @@ local LocalPlayer = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
 
 --Constants--
-local GRAVITY = Vector3.new(0,-50,0)
+local GRAVITY = Vector3.new(0,-80,0)
 local MAX_PROJECTILE_LIFETIME = 10
 local RAYCAST_DISTANCE = 1
-local MAX_DISTANCE_ALLOWED = 300
+local MAX_DISTANCE_ALLOWED = 1000
 
 
 --Projectile Controller Methods
+
 function ProjectileController:Init()
      self.Projectiles = {} --Sets up container for physics
      self.RaycastParams = RaycastParams.new()
-     self.RaycastParams.FilterType = Enum.RaycastFilterType.Blacklist
+     self.RaycastParams.FilterType = Enum.RaycastFilterType.Exclude
      self.RaycastParams.FilterDescendantsInstances = {}
      self.ProjectileCooldowns = {}
      self.ProjectileEvent = Warp.Client("ProjectileEvent")
@@ -115,7 +116,7 @@ function ProjectileController:AttemptFire(FoodName : string)
             Owner = LocalPlayer,
             Restitution = foodData.Restitution or 0.5,
             Gravity = GRAVITY,
-            MaxBounces = foodData.MaxBounces or 0,
+            MaxBounces = foodData.MaxBounces or 3,
             Damage = foodData.Damage or 10,
             Special = foodData.Special or {}
                 })
@@ -139,7 +140,7 @@ function  ProjectileController:StartPhysicsSim()
         local currentTime = tick()
 
         --blacklist
-        local blacklist = {LocalPlayer.Character}
+        local blacklist = {LocalPlayer.Character, workspace.debugParts}
         for _, proj in pairs(self.Projectiles) do
             if proj.Model then
                 table.insert(blacklist, proj.Model)
@@ -169,13 +170,14 @@ function  ProjectileController:StartPhysicsSim()
             local hitResult = self:CheckHit(prevPos, proj.Position, proj)
 
             if hitResult then
+                print("projectile hit")
                 self:HandleHit(proj, hitResult)
             end
 
             --check if it's too far away
-          --  if (proj.Position - proj.Origin).Magnitude > MAX_DISTANCE_ALLOWED then
-           --     self:RemoveProjectile(id)
-          --  end
+           if (proj.Position - proj.Origin).Magnitude > MAX_DISTANCE_ALLOWED then
+              self:RemoveProjectile(id)
+           end
         end
     end)
 end
@@ -201,6 +203,7 @@ function ProjectileController:HandleHit(projectile, hitResult : RaycastResult)
     local hitPos = hitResult.Position
 
     --check if it hits a player
+    print(hitInstance.Name)
     local humanoid = hitInstance.Parent:FindFirstChildOfClass("Humanoid")
     if humanoid and hitInstance.Parent ~= LocalPlayer.Character then
         --let server validate(fire remote to server here)
@@ -218,7 +221,9 @@ function ProjectileController:HandleHit(projectile, hitResult : RaycastResult)
 end
 
 function ProjectileController:StartReplicationListener()
-
+    self.ProjectileEvent:Connect(function(replicatedProjectileData)
+        
+    end)
 end
 
 function ProjectileController:GenerateProjectileId()

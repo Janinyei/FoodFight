@@ -1,3 +1,8 @@
+--Purpose:  
+--Handles projectile replication.
+--Validates and handles sanity checks for projectiles(essentially anti-cheat)
+--librium 10/26/25
+
 --Services--
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -18,8 +23,15 @@ local ProjectileManager = {}
 function ProjectileManager:Init()
     self.ActiveProjectiles = {}
 
-    ProjectileEvent:Connect(function(player)
-        print("projectile event received on server from ".. player.Name)
+    ProjectileEvent:Connect(function(player, action, data : {})
+        if action == "Fire" then 
+            print("replicating on server")
+            ProjectileEvent:Fires(true, data)
+        elseif action == "Hit" then
+            --insert stuff
+            print("hit")
+        end
+       
     end)
 end
 

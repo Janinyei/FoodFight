@@ -28,7 +28,7 @@ return{
         Coins  = 0.08
     },
 
-    Ultimate = {
+    Celestial = {
         --logic works differently(see design doc)
     }
 }

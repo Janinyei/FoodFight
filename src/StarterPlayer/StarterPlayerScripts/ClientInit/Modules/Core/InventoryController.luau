@@ -13,12 +13,16 @@ local InventoryController = {}
 local InventoryEvent
 
 -- Types
-type inventory = { [string]: { Name: string, Amount: number, Upgrades: { [string]: any } } }
+type inventory = { [string]: { Name: string, Type: string, Amount: number } }
 
-function updateUI(Inventory: inventory)
+
+-- Local Functions
+local function updateUI(Inventory: inventory)
     -- TODO: , tzu
 end
 
+
+-- Main Functions
 
 function InventoryController:Init()
     self.Inventory = {}
@@ -27,11 +31,8 @@ end
 
 function  InventoryController:Start()
     InventoryEvent = Warp.Client("InventoryEvent")
-
-     InventoryEvent:Connect(function(inventory: {})
-        print(inventory)
-
-        --update UI
+    InventoryEvent:Connect(function(Inventory:inventory)
+        updateUI(Inventory)
     end)
 end
 

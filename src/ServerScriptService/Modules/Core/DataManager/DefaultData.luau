@@ -3,39 +3,36 @@
 --Janin 10/25/25
 local module = {
 	Coins = 50,
-        Gems = 0,
+    Gems = 0,
 	Level = 0,
 	Exp = 0, --Max exp is calculated based on exp & level. No need to save in here.
 	Rank = "Novice",
+
 	Inventory = {
 		--Food is NOT stack-able
 		Food = {
-                        Burger = {
-                                Name = "Burger",
-                                Type = "Food",
-                                
-                        },
-                },
+           Burger = {
+                Name = "Burger",
+               	Type = "Food",
+        	},
+        },
 
 		--Skins ARE stack-able
 		Skins = {
 			Lava = {
 				Name = "Lava",
-                                Amount = 1,
-                                Type = "Skin"
+                Type = "Skin",
+				Amount = 1,
 			},
-
-
 		},
 
-                
-                Auras = {
-                        Flame = {
-                                Name = "Flame",
-                                Amount = 3,
-                                Type = "Aura"
-                        }
-                },
+		Auras = {
+			Flame = {
+				Name = "Flame",
+				Type = "Aura",
+				Amount = 3,
+			}
+		},
 
 	},
 
