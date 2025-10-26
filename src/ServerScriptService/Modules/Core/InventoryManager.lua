@@ -1,7 +1,6 @@
 -- Imports
 local Core = require(game.ReplicatedStorage.Modules.Core)
 local Warp = require(game.ReplicatedStorage.Modules.Utils.Warp)
-
 -- Services
 local Players = game:GetService("Players")
 
@@ -21,7 +20,7 @@ end
 
 function InventoryManager:Start()
 	DataManager.DataLoaded:Connect(function(Player: Player, Data: {})
-		InventoryEvent:Fire(true, Player, Data)
+		InventoryEvent:Fire(true, Player, Data.Inventory)
 	end)
 end
 

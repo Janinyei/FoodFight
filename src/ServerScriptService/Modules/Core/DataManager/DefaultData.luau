@@ -2,8 +2,10 @@
 --NOTE: Try not to save too much data. Only save the stuff that actually NEEDS to be saved(duh)
 --Janin 10/25/25
 local module = {
-	Coins = 50,
-    Gems = 0,
+	Currency = {
+		Coins = 50,
+		Gems = 0,
+	},
 	Level = 0,
 	Exp = 0, --Max exp is calculated based on exp & level. No need to save in here.
 	Rank = "Novice",
@@ -41,5 +43,5 @@ local module = {
 		Music = true,
 	},
 }
-
+export type PlayerData = typeof(module)
 return module

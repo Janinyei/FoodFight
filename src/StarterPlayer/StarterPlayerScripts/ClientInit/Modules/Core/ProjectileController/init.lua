@@ -1,27 +1,14 @@
---Purpose: To help simuate the client-sided projectile physics
+--Purpose: To help simulate the client-sided projectile physics
 --janin 10/22/25
---[[
-Design:
-Player triggers projectile 
-Game Checks if cooldown is active 
-If it's not, then 
-    Game creates a new projectile
-    Game adds the projectile to the table of projectiles
-    Game sets the cooldown active
-    Game Fires an event to the server to do projectile hit calculations
-    Other Clients recieve the visual event
-notes:
-since projectiles can use different models/foods, I need to figure out a way to simply set the model of the fruit to the projectile
-]]
-local ProjectileController = {}
 
+local ProjectileController = {}
 
 --Services--
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
 local CAS = game:GetService("ContextActionService")
-local RunService = game:GetService("RunService")
 local HttpService = game:GetService("HttpService")
+local Debris = game:GetService("Debris")
 
 --Modules--
 local Modules = ReplicatedStorage.Modules
@@ -36,199 +23,307 @@ local FoodIndex = require(Modules.Info.FoodIndex)
 --Variables--
 local LocalPlayer = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
+local FoodModels = ReplicatedStorage.Assets.FoodModels
+local LocalProjectiles = {}
+local ReplicatedProjectiles = {}
 
---Constants--
-local GRAVITY = Vector3.new(0,-80,0)
-local MAX_PROJECTILE_LIFETIME = 10
-local RAYCAST_DISTANCE = 1
-local MAX_DISTANCE_ALLOWED = 1000
-
+local DebugInstanceFolder = Instance.new("Folder")
+DebugInstanceFolder.Parent = workspace
+DebugInstanceFolder.Name = "DebugInstances"
 
 --Projectile Controller Methods
-
 function ProjectileController:Init()
-     self.Projectiles = {} --Sets up container for physics
-     self.RaycastParams = RaycastParams.new()
-     self.RaycastParams.FilterType = Enum.RaycastFilterType.Exclude
-     self.RaycastParams.FilterDescendantsInstances = {}
-     self.ProjectileCooldowns = {}
-     self.ProjectileEvent = Warp.Client("ProjectileEvent")
+	self.RaycastParams = RaycastParams.new()
+	self.RaycastParams.FilterType = Enum.RaycastFilterType.Exclude
+	self.Blacklist = { DebugInstanceFolder }
+	self.RaycastParams.FilterDescendantsInstances = self.Blacklist
+	self.ProjectileCooldowns = {}
+	self.ProjectileEvent = Warp.Client("ProjectileEvent")
+	
+	-- Add local character to blacklist if it exists
+	if LocalPlayer.Character then
+		table.insert(self.Blacklist, LocalPlayer.Character)
+		self.RaycastParams.FilterDescendantsInstances = self.Blacklist
+	end
+	
+	-- Update blacklist when character spawns
+	LocalPlayer.CharacterAdded:Connect(function(character)
+		-- Remove old character from blacklist
+		for i, v in ipairs(self.Blacklist) do
+			if typeof(v) == "Instance" and v:IsDescendantOf(Players) then
+				table.remove(self.Blacklist, i)
+				break
+			end
+		end
+		-- Add new character
+		table.insert(self.Blacklist, character)
+		self.RaycastParams.FilterDescendantsInstances = self.Blacklist
+	end)
 end
 
 function ProjectileController:Start()
-    --whenever someone clicks, create and fire a projectile
-    local fireAction = "FireProjectile"
-    
-    local function fireProj(inputObject, inputState)
+	--whenever someone clicks, create and fire a projectile
+	local fireAction = "FireProjectile"
 
-        if inputState == Enum.UserInputState.End then
-           self:AttemptFire("Burger")
-        end
-    end
+	local function fireProj(inputObject, inputState)
+		if inputState == Enum.UserInputState.End then
+			self:AttemptFire("Burger")
+		end
+	end
 
-    CAS:BindAction(fireAction, fireProj, false, Enum.UserInputType.MouseButton1)
-      --setup replication event here to receive visual effects and such
-      self:StartReplicationListener()
-      --setup physics sim
-      self:StartPhysicsSim()
-end
-
-
-function ProjectileController:AddProjectile(proj)
-self.Projectiles[proj.Id] = proj
-end
-
-function  ProjectileController:RemoveProjectile(id)
-   local proj = self.Projectiles[id]
-   if proj then
-    proj:Cleanup()
-    self.Projectiles[id] = nil
-   end
-end
-
-
-function ProjectileController:AttemptFire(FoodName : string)
-    --check character instances
-     if LocalPlayer.Character == nil  then return end --guard clause
-        local HRP = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-     if not HRP then return end --guard clause
-     --check cooldowns
-     local currentTime = tick()
-     local foodData = FoodIndex[FoodName] or  {HitBehavior = "Normal", BaseDamage = 10, Cooldown = 1}
-     local cooldown = foodData.Cooldown
-
-     if self.ProjectileCooldowns[FoodName] and currentTime - self.ProjectileCooldowns[FoodName] < cooldown then return end --another guard clause
-        --define launch parameters
-            local Direction = Camera.CFrame.LookVector --direction the player aiming
-            local Speed = 100
-            local Velocity = Direction * Speed
-            local Origin = HRP.Position + HRP.CFrame.LookVector * 5
-       
-            local ProjectileId = self:GenerateProjectileId()
-
-
-            --create & fire projectile
-            local NewProj = Projectile.new({
-             Id = ProjectileId,
-            FoodName = FoodName,
-            Origin = Origin,
-            Velocity = Velocity,
-            Owner = LocalPlayer,
-            Restitution = foodData.Restitution or 0.5,
-            Gravity = GRAVITY,
-            MaxBounces = foodData.MaxBounces or 3,
-            Damage = foodData.Damage or 10,
-            Special = foodData.Special or {}
-                })
-
-            NewProj:Fire(Origin, Velocity)
-            self:AddProjectile(NewProj)
-
-            self.ProjectileCooldowns[FoodName] = currentTime
-
-            self.ProjectileEvent:Fire(true,{
-                Id = ProjectileId,
-                FoodName = FoodName,
-                Origin = Origin,
-                Direction = Direction,
-                Timestamp = currentTime
-            })
-end
-
-function  ProjectileController:StartPhysicsSim()
-    self.PhysicsConnection = RunService.Heartbeat:Connect(function(deltaTime)
-        local currentTime = tick()
-
-        --blacklist
-        local blacklist = {LocalPlayer.Character, workspace.debugParts}
-        for _, proj in pairs(self.Projectiles) do
-            if proj.Model then
-                table.insert(blacklist, proj.Model)
-            end
-        end
-
-        self.RaycastParams.FilterDescendantsInstances = blacklist
-        
-        --handle each projectile
-
-        for id, proj in pairs(self.Projectiles) do
-            --check lifetime
-            if currentTime - proj.StartTime > MAX_PROJECTILE_LIFETIME then
-                self:RemoveProjectile(proj)
-                continue
-            end
-
-            --Store previous position for raycasting
-            local prevPos = proj.Position
-            
-
-            --Update physics
-
-            proj:UpdatePhysics(deltaTime)
-
-            --hit detection
-            local hitResult = self:CheckHit(prevPos, proj.Position, proj)
-
-            if hitResult then
-                print("projectile hit")
-                self:HandleHit(proj, hitResult)
-            end
-
-            --check if it's too far away
-           if (proj.Position - proj.Origin).Magnitude > MAX_DISTANCE_ALLOWED then
-              self:RemoveProjectile(id)
-           end
-        end
-    end)
-end
-
-function ProjectileController:CheckHit(startPos, endPos, projectile)
-    local direction =  (endPos - startPos)
-    local distance = direction.Magnitude
-
-    if distance <= 0 then return nil end
-
-    local raycast = workspace:Raycast(
-        startPos, 
-        direction.Unit * (distance + RAYCAST_DISTANCE),
-        self.RaycastParams
-    )
-
-    return raycast
-end
-
-function ProjectileController:HandleHit(projectile, hitResult : RaycastResult)
-    local hitInstance = hitResult.Instance
-    local hitNormal = hitResult.Normal
-    local hitPos = hitResult.Position
-
-    --check if it hits a player
-    print(hitInstance.Name)
-    local humanoid = hitInstance.Parent:FindFirstChildOfClass("Humanoid")
-    if humanoid and hitInstance.Parent ~= LocalPlayer.Character then
-        --let server validate(fire remote to server here)
-        return --end func here
-    end
-
-    --bouncing
-
-    if projectile.BounceCount < projectile.MaxBounces then
-        projectile:Bounce(hitNormal, projectile.Restitution)
-        projectile.BounceCount += 1
-    else
-        self:RemoveProjectile(projectile.Id)
-    end
-end
-
-function ProjectileController:StartReplicationListener()
-    self.ProjectileEvent:Connect(function(replicatedProjectileData)
-        
-    end)
+	CAS:BindAction(fireAction, fireProj, false, Enum.UserInputType.MouseButton1)
+	--setup replication event here to receive visual effects and such
+	self:StartReplicationListener()
 end
 
 function ProjectileController:GenerateProjectileId()
-    return LocalPlayer.Name .. HttpService:GenerateGUID(false)
+	return LocalPlayer.UserId .. "_" .. HttpService:GenerateGUID(false)
 end
 
+function ProjectileController:AttemptFire(FoodName: string)
+	--check character instances
+	if LocalPlayer.Character == nil then
+		return
+	end
+	local HRP = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+	if not HRP then
+		return
+	end
+	
+	--check cooldowns
+	local currentTime = tick()
+	local foodData = FoodIndex[FoodName]
+	if not foodData then
+		warn("Food not found:", FoodName)
+		return
+	end
+	
+	local cooldown = foodData.Cooldown or 1
+	if self.ProjectileCooldowns[FoodName] and currentTime - self.ProjectileCooldowns[FoodName] < cooldown then
+		return
+	end
+	
+	--define launch parameters
+	local Direction = Camera.CFrame.LookVector
+	local Speed = foodData.Speed or 150
+	local Velocity = Direction * Speed
+	local Origin = HRP.Position + HRP.CFrame.LookVector * 5
+	
+	-- Generate unique ID
+	local ProjectileId = self:GenerateProjectileId()
+
+	--create & fire projectile
+	local ProjectileData = {
+		Id = ProjectileId,
+		Origin = Origin,
+		Velocity = Velocity,
+		Owner = LocalPlayer,
+		Restitution = foodData.Restitution or 0.5,
+		Acceleration = Vector3.new(0, foodData.Gravity or -90, 0),
+		MaxBounces = foodData.MaxBounces or 3,
+		MaxDistance = 1000,
+		RaycastParams = self.RaycastParams,
+		Lifetime = 30,
+		Update = foodData.DebugMode and function(deltaTime, projectile)
+			--debug part (optional)
+			local part = Instance.new("Part")
+			part.Parent = DebugInstanceFolder
+			part.Position = projectile.Position
+			part.Size = Vector3.new(0.5, 0.5, 0.5)
+			part.Anchored = true
+			part.CanCollide = false
+			part.Transparency = 0.9
+			part.Color = Color3.fromRGB(0, 255, 0)
+			Debris:AddItem(part, 10)
+		end or nil,
+	}
+
+	-- Create food model
+	local FoodModel = FoodModels[FoodName]:Clone()
+	FoodModel.Parent = workspace
+	
+	-- Add to blacklist
+	table.insert(self.Blacklist, FoodModel)
+	self.RaycastParams.FilterDescendantsInstances = self.Blacklist
+
+	-- Create projectile
+	local NewProj = Projectile.new(ProjectileData)
+	NewProj:LoadModel(FoodModel)
+	
+	-- Store in local projectiles
+	LocalProjectiles[ProjectileId] = NewProj
+
+	-- Fire projectile
+	NewProj:Fire()
+	
+	-- Send to server for replication
+	self.ProjectileEvent:Fire("Fire", {
+		Id = ProjectileId,
+		Owner = LocalPlayer,
+		Origin = Origin,
+		Direction = Direction,
+		Velocity = Velocity,
+		FoodName = FoodName,
+		Timestamp = tick()
+	})
+
+	-- Setup hit connection
+	NewProj.OnHit:Connect(function(hitResult)
+		-- Check if we hit a player
+		local hitInstance = hitResult.Instance
+		local humanoid = hitInstance.Parent:FindFirstChildOfClass("Humanoid")
+		
+		if humanoid and hitInstance.Parent ~= LocalPlayer.Character then
+			local hitPlayer = Players:GetPlayerFromCharacter(hitInstance.Parent)
+			
+			-- Send hit validation to server
+			self.ProjectileEvent:Fire("Hit", {
+				ProjectileId = ProjectileId,
+				HitPlayer = hitPlayer,
+				HitPosition = hitResult.Position,
+				HitPart = hitInstance.Name,
+				Velocity = NewProj.Velocity,
+				Timestamp = tick()
+			})
+		else
+			-- Hit environment
+			self.ProjectileEvent:Fire("Hit", {
+				ProjectileId = ProjectileId,
+				HitPosition = hitResult.Position,
+				HitNormal = hitResult.Normal,
+				Velocity = NewProj.Velocity,
+				Timestamp = tick()
+			})
+		end
+	end)
+	
+	-- Setup cleanup
+	NewProj.OnDestroyed:Connect(function()
+		LocalProjectiles[ProjectileId] = nil
+		-- Remove from blacklist
+		for i, v in ipairs(self.Blacklist) do
+			if v == FoodModel then
+				table.remove(self.Blacklist, i)
+				break
+			end
+		end
+		self.RaycastParams.FilterDescendantsInstances = self.Blacklist
+	end)
+
+	-- Set cooldown
+	self.ProjectileCooldowns[FoodName] = currentTime
+end
+
+function ProjectileController:StartReplicationListener()
+	self.ProjectileEvent:Connect(function(action, ProjData)
+		if action == "Fire" then
+			-- Don't replicate our own projectiles
+			if ProjData.Owner == LocalPlayer then 
+				return 
+			end
+
+			-- Validate owner has character
+			local OwnerCharacter = ProjData.Owner.Character
+			if not OwnerCharacter then return end
+			
+			local OwnerHRP = OwnerCharacter:FindFirstChild("HumanoidRootPart")
+			if not OwnerHRP then return end
+			
+			-- Get food data
+			local foodData = FoodIndex[ProjData.FoodName] or {}
+
+			-- Create replicated projectile
+			local ReplicatedProjectileData = {
+				Id = ProjData.Id,
+				Origin = ProjData.Origin,
+				Velocity = ProjData.Velocity,
+				Owner = ProjData.Owner,
+				Restitution = foodData.Restitution or 0.5,
+				Acceleration = Vector3.new(0, foodData.Gravity or -90, 0),
+				MaxBounces = foodData.MaxBounces or 3,
+				MaxDistance = 1000,
+				RaycastParams = self.RaycastParams,
+				Lifetime = 30,
+				IsReplicated = true,
+				Update = foodData.DebugMode and function(deltaTime, projectile)
+					--debug part for replicated
+					local part = Instance.new("Part")
+					part.Parent = DebugInstanceFolder
+					part.Position = projectile.Position
+					part.Size = Vector3.new(0.5, 0.5, 0.5)
+					part.Anchored = true
+					part.CanCollide = false
+					part.Transparency = 0.9
+					part.Color = Color3.fromRGB(0, 0, 255)
+					Debris:AddItem(part, 10)
+				end or nil,
+			}
+
+			-- Create replicated projectile
+			local ReplicatedProjectile = Projectile.new(ReplicatedProjectileData)
+			ReplicatedProjectiles[ProjData.Id] = ReplicatedProjectile
+			
+			-- Create and load model
+			local FoodModel = FoodModels[ProjData.FoodName]:Clone()
+			FoodModel.Parent = workspace
+			
+			-- Add to blacklist
+			table.insert(self.Blacklist, FoodModel)
+			self.RaycastParams.FilterDescendantsInstances = self.Blacklist
+			
+			ReplicatedProjectile:LoadModel(FoodModel)
+			ReplicatedProjectile:Fire()
+			
+			-- Setup cleanup
+			ReplicatedProjectile.OnDestroyed:Connect(function()
+				ReplicatedProjectiles[ProjData.Id] = nil
+				-- Remove from blacklist
+				for i, v in ipairs(self.Blacklist) do
+					if v == FoodModel then
+						table.remove(self.Blacklist, i)
+						break
+					end
+				end
+				self.RaycastParams.FilterDescendantsInstances = self.Blacklist
+			end)
+
+		elseif action == "Hit" then
+			-- Handle hit confirmation from server
+			local ProjectileId = ProjData.ProjectileId
+			
+			-- Destroy the projectile (server confirmed hit)
+			if ProjData.Destroyed then
+				if LocalProjectiles[ProjectileId] then
+					LocalProjectiles[ProjectileId]:Destroy()
+					LocalProjectiles[ProjectileId] = nil
+				elseif ReplicatedProjectiles[ProjectileId] then
+					ReplicatedProjectiles[ProjectileId]:Destroy()
+					ReplicatedProjectiles[ProjectileId] = nil
+				end
+			end
+			
+		elseif action == "Bounce" then
+			-- Update replicated projectile bounce
+			local ProjectileId = ProjData.Id
+			if ReplicatedProjectiles[ProjectileId] then
+				local projectile = ReplicatedProjectiles[ProjectileId]
+				projectile.Velocity = ProjData.Velocity
+				projectile.Position = ProjData.Position
+				projectile.BounceCount = ProjData.BounceCount or projectile.BounceCount
+			end
+			
+		elseif action == "Destroyed" then
+			-- Clean up destroyed projectile
+			local ProjectileId = ProjData.ProjectileId
+			if LocalProjectiles[ProjectileId] then
+				LocalProjectiles[ProjectileId]:Destroy()
+				LocalProjectiles[ProjectileId] = nil
+			elseif ReplicatedProjectiles[ProjectileId] then
+				ReplicatedProjectiles[ProjectileId]:Destroy()
+				ReplicatedProjectiles[ProjectileId] = nil
+			end
+		end
+	end)
+end
 
 return ProjectileController
