@@ -2,20 +2,15 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
--- Imports
-local Core = require(ReplicatedStorage.Modules.Core)
-local Warp = require(ReplicatedStorage.Modules.Utils.Warp)
 
--- Module
+-- Modules
 local CurrencyManager = {}
 local DataManager = nil :: ModuleScript?
 
--- Events
-local CurrencyEvent
 
-function CurrencyManager:Init()
+function CurrencyManager:Init(Core)
 	--Events--
-	CurrencyEvent = Warp.Server("CurrencyEvent")
+	self.CurrencyEvent = Core:Get("SharedRemotes"):GetEvent("CurrencyEvent")
 	--Modules--
 	DataManager = Core:Get("DataManager")
 end
@@ -23,7 +18,7 @@ end
 function CurrencyManager:Start()
 	DataManager.DataLoaded:Connect(function(Player: Player, Data: {})
         print(Data.Currency)
-		CurrencyEvent:Fire(true, Player, Data.Currency)
+		self.CurrencyEvent:Fire(true, Player, Data.Currency)
 	end)
 end
 
@@ -31,7 +26,7 @@ function CurrencyManager:AddCurrency(Player: Player, Type: string, Amount: numbe
 	local PlrData = DataManager:GetData(Player)
 	PlrData.Currency[Type] = PlrData.Currency[Type] + Amount
 	-- Replicate to client
-	CurrencyEvent:Fire(true, Player, PlrData.Currency)
+	self.CurrencyEvent:Fire(true, Player, PlrData.Currency)
 	return PlrData.Currency[Type]
 end
 
@@ -44,7 +39,7 @@ function CurrencyManager:RemoveCurrency(Player: Player, Type: string, Amount: nu
 	end
 	PlrData.Currency[Type] = PlrData.Currency[Type] - Amount
 	-- Replicate to client
-	CurrencyEvent:Fire(true, Player, PlrData.Currency)
+	self.CurrencyEvent:Fire(true, Player, PlrData.Currency)
 	return true
 end
 

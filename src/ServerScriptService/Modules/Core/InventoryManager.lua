@@ -2,25 +2,22 @@
 local Core = require(game.ReplicatedStorage.Modules.Core)
 local Warp = require(game.ReplicatedStorage.Modules.Utils.Warp)
 -- Services
-local Players = game:GetService("Players")
 
 -- Module
 local InventoryManager = {}
 local DataManager = nil :: ModuleScript?
 
--- Events
-local InventoryEvent
 
-function InventoryManager:Init()
+function InventoryManager:Init(Core)
 	--Events--
-	InventoryEvent = Warp.Server("InventoryEvent")
+	self.InventoryEvent = Core:Get("SharedRemotes"):GetEvent("InventoryEvent")
 	--Modules--
 	DataManager = Core:Get("DataManager")
 end
 
 function InventoryManager:Start()
 	DataManager.DataLoaded:Connect(function(Player: Player, Data: {})
-		InventoryEvent:Fire(true, Player, Data.Inventory)
+		self.InventoryEvent:Fire(true, Player, Data.Inventory)
 	end)
 end
 
@@ -40,7 +37,7 @@ function InventoryManager:AddItem(Player: Player, ItemData: { Name: string, Type
 		PlrData.Inventory[ItemData.Type][ItemData.Name] = NewItem
 	end
 	-- replicate to client
-    InventoryEvent:Fire(true, Player, PlrData.Inventory)
+    self.InventoryEvent:Fire(true, Player, PlrData.Inventory)
 end
 
 function InventoryManager:RemoveItem(Player: Player, ItemData:{Name: string, Type:string}, RemoveAll: boolean?)
@@ -59,7 +56,7 @@ function InventoryManager:RemoveItem(Player: Player, ItemData:{Name: string, Typ
 		ExistingItem.Amount = ExistingItem.Amount and ExistingItem.Amount - 1
 	end
 	-- replicate to client
-	InventoryEvent:Fire(true, Player, PlrData.Inventory)
+	self.InventoryEvent:Fire(true, Player, PlrData.Inventory)
 end
 
 function InventoryManager:GetItem(Player:Player, PlrData, ItemData: { Name: string, Type: string})

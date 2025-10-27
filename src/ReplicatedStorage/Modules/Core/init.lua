@@ -57,9 +57,6 @@ function Core:Init(ModulesToLoad: Folder)
 			warn(string.format("[Core] Failed to load '%s': %s", data.name, result))
 		end
 	end
-    
-    print("loaded all modules")
-    print(self._modules)
 	--Initialize in priority order
 
 	for i, data in ipairs(allModules) do
