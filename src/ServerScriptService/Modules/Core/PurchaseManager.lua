@@ -13,17 +13,17 @@ local Core = require(Modules.Core)
 local DataManager
 
 
-function Init()
+function PurchaseManager:Init()
     DataManager = Core:Get("DataManager")
+    
 end
 
 function  PurchaseManager:Start()
-    --init remote functions that listen to different 'types' of events
-        --when I say types I mean like "Skin" or "Food" 
+
 end
 
 function PurchaseManager:PurchaseItem(Player, ItemData)
-    
+
 end
 
 return PurchaseManager

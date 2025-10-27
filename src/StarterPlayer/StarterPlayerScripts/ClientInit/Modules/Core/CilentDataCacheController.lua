@@ -11,6 +11,7 @@ local CilentDataCacheController = {}
 -- Events
 local CurrencyEvent
 local InventoryEvent
+local DataEvent
 -- Types
 type currencyType = { Coins: number, Gems: number }
 type inventoryType = { [string]: { Name: string, Type: string, Amount: number } }
@@ -26,6 +27,7 @@ end
 
 -- Signals
 function CilentDataCacheController:Init()
+	--create cache
 	self.Currency = {
 		Coins = 0,
 		Gems = 0
@@ -34,25 +36,28 @@ function CilentDataCacheController:Init()
     -- Signals
 	self.CurrencyChanged = Signal.new()
 	self.InventoryChanged = Signal.new()
-
-	print(self)
 end
 
 function CilentDataCacheController:Start()
 	CurrencyEvent = Warp.Client("CurrencyEvent")
 	InventoryEvent = Warp.Client("InventoryEvent")
+	DataEvent = Warp.Client("DataEvent")
 
-	print("START")
+
+	--load initial values
+	local InitData = DataEvent:Invoke(30)
+	print(InitData)
+
+	self.Currency = InitData.Currency
+	self.Inventory = InitData.Gems
 
 	CurrencyEvent:Connect(function(Currency: currencyType)
-		print(Currency)
 		self.Currency = Currency
 		updateCurrencyUI(Currency)
 		self.CurrencyChanged:Fire(Currency)
 	end)
 	
 	InventoryEvent:Connect(function(Inventory: inventoryType)
-		print(CurrencyEvent)
 		self.Inventory = Inventory
 		updateInventoryUI(Inventory)
 		self.InventoryChanged:Fire(Inventory)

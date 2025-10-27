@@ -118,9 +118,9 @@ function ProjectileController:AttemptFire(FoodName: string)
 		Origin = Origin,
 		Velocity = Velocity,
 		Owner = LocalPlayer,
-		Restitution = foodData.Restitution or 0.5,
+		Restitution = foodData.Restitution,
 		Acceleration = Vector3.new(0, foodData.Gravity or -90, 0),
-		MaxBounces = foodData.MaxBounces or 3,
+		MaxBounces = foodData.MaxBounces,
 		MaxDistance = 1000,
 		RaycastParams = self.RaycastParams,
 		Lifetime = 30,
@@ -155,9 +155,10 @@ function ProjectileController:AttemptFire(FoodName: string)
 
 	-- Fire projectile
 	NewProj:Fire()
+    
 	
 	-- Send to server for replication
-	self.ProjectileEvent:Fire("Fire", {
+	self.ProjectileEvent:Fire(true,"Fire", {
 		Id = ProjectileId,
 		Owner = LocalPlayer,
 		Origin = Origin,
@@ -177,7 +178,7 @@ function ProjectileController:AttemptFire(FoodName: string)
 			local hitPlayer = Players:GetPlayerFromCharacter(hitInstance.Parent)
 			
 			-- Send hit validation to server
-			self.ProjectileEvent:Fire("Hit", {
+			self.ProjectileEvent:Fire(true,"Hit", {
 				ProjectileId = ProjectileId,
 				HitPlayer = hitPlayer,
 				HitPosition = hitResult.Position,
@@ -187,7 +188,7 @@ function ProjectileController:AttemptFire(FoodName: string)
 			})
 		else
 			-- Hit environment
-			self.ProjectileEvent:Fire("Hit", {
+			self.ProjectileEvent:Fire(true,"Hit", {
 				ProjectileId = ProjectileId,
 				HitPosition = hitResult.Position,
 				HitNormal = hitResult.Normal,
@@ -212,6 +213,8 @@ function ProjectileController:AttemptFire(FoodName: string)
 
 	-- Set cooldown
 	self.ProjectileCooldowns[FoodName] = currentTime
+
+
 end
 
 function ProjectileController:StartReplicationListener()

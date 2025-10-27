@@ -86,6 +86,7 @@ RunService.Heartbeat:Connect(function(deltaTime)
 			else
 				-- Max bounces reached, destroy projectile
 				proj:Destroy()
+
 			end
 		end
 	end
@@ -109,12 +110,12 @@ function Projectile.new(data: ProjectileData)
 	self.IsReplicated = data.IsReplicated or false
 
 	-- Physical properties
-	self.Restitution = data.Restitution or 0.5
+	self.Restitution = data.Restitution or 0.35
 	self.Acceleration = data.Acceleration or Vector3.new(0, -50, 0)
 	self.BounceCount = 0
-	self.MaxBounces = data.MaxBounces or 0
+	self.MaxBounces = data.MaxBounces or 9999
 	self.RaycastParams = data.RaycastParams or RaycastParams.new()
-	
+	self.Rotation = CFrame.Angles(0, 0, 0)
 	-- Timing
 	self.StartTime = tick()
 	self.LastUpdateTime = self.StartTime
@@ -159,9 +160,11 @@ function Projectile:LoadModel(Model: Model | BasePart)
 	-- Set initial position
 	if self.Model then
 		if self.Model:IsA("Model") then
-			self.Model:PivotTo(CFrame.lookAt(self.Position, self.Position + self.Velocity))
+			--self.Model:PivotTo(CFrame.lookAt(self.Position, self.Position + self.Velocity))
+			self.Model:PivotTo(CFrame.new(self.Position) * self.Rotation)
 		else
-			self.Model.CFrame = CFrame.lookAt(self.Position, self.Position + self.Velocity)
+			warn("cannot set model cframe, instance is not a model")
+			--self.Model.CFrame = CFrame.lookAt(self.Position, self.Position + self.Velocity)
 		end
 	end
 end
@@ -175,12 +178,10 @@ function Projectile:UpdatePhysics(deltaTime: number)
 	
 	-- Update visual model
 	if self.Model then
-		local lookAtCFrame = CFrame.lookAt(self.Position, self.Position + self.Velocity)
-		
+		local GoalCFrame = CFrame.new(self.Position) * self.Rotation
+
 		if self.Model:IsA("Model") then
-			self.Model:PivotTo(lookAtCFrame)
-		else
-			self.Model.CFrame = lookAtCFrame
+			self.Model:PivotTo(GoalCFrame)
 		end
 	end
 	
@@ -219,7 +220,7 @@ function Projectile:Bounce(hitNormal: Vector3)
 	
 	-- Small upward boost to prevent sliding
 	if math.abs(hitNormal.Y) > 0.7 then
-		self.Position = self.Position + hitNormal * 0.1
+		--self.Position = self.Position + hitNormal * 0.1
 	end
 end
 
@@ -240,8 +241,11 @@ function Projectile:Destroy()
 	
 	-- Clean up model
 	if self.Model then
-		self.Model:Destroy()
-		self.Model = nil
+		
+			self.Model:Destroy()
+			self.Model = nil
+	
+		
 	end
 	
 	-- Remove from active projectiles
@@ -252,9 +256,6 @@ function Projectile:Destroy()
 	self.OnDestroyed:Destroy()
 end
 
--- Alias for backwards compatibility
-function Projectile:Cleanup()
-	self:Destroy()
-end
+
 
 return Projectile

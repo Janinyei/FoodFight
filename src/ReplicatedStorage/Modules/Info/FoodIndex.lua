@@ -12,46 +12,41 @@ BlastRadius [number] : reach of the blast hitbox
 
 return {
     Burger = {
-        HitBehavior = "Normal", --normal projectile
         BaseDamage = 5,
         Cooldown = 0.3,
         Price = 0
     },
 
     Tomato = {
-        HitBehavior = "Normal",
-        BaseDamage = 5,
+        BaseDamage = 8,
         Cooldown = 0.4,
         Price = 250,
     },
 
     Soda = {
-        HitBehavior = "Normal",
         BaseDamage = 5,
         Cooldown = 0.4,
         Price = 250,
     },
 
     Egg = {
-        HitBehavior = "Special"
+      
     },
-
-
-
-
 
     Grapes = {
 
     },
-
   
     Watermelon = {
-        HitBehavior = "Blast", --explosive projectile
         BaseDamage = 15,
         SpecialDamage = 10,
         BlastRadius = 10,
         KnockbackForce = 50,
         KnockbackDuration = 0.5,
+
+        OnHit = function(proj)
+            
+        end
     },
 
 }

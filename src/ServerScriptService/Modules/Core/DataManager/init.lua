@@ -8,10 +8,8 @@ local Utils = Modules.Utils
 
 local Signal = require(Utils.Signal)
 local ProfileStore = require(script.ProfileStore)
-local DefaultData = require(script.DefaultData)
 local Warp = require(Utils.Warp)
 
---Imports--
 
 local module =  {}
 
@@ -19,12 +17,13 @@ local module =  {}
 local PlayerStore = nil
 
 
-function module:Init()
-   PlayerStore = ProfileStore.New("TestingData",DefaultData)
+function module:Init(Core)
+   PlayerStore = ProfileStore.New("TestingData", self.DefaultData)
    self.Profiles = {}
    self.DataLoaded  = Signal.new()
-   self.DataEvent = Warp.Server("DataEvent")
-       
+   self.DataEvent = Core:Get("RemoteShared").Events.DataEvent
+   
+   print(self.DataEvent)
    local function PlayerAdded(player)
       -- Start a profile session for this player's data:
       local profile = PlayerStore.Mock:StartSessionAsync(`{player.UserId}`, {
@@ -77,6 +76,12 @@ function module:Init()
    end)
 end
 
+function module:Start()
+   self.DataEvent:Connect(function(player)
+    return module:GetData(player) 
+   end)
+end
+
 function module:GetData(player : Player)
     local profile = self.Profiles[player]
     
@@ -86,5 +91,50 @@ function module:GetData(player : Player)
          warn(`No profile found for {player.DisplayName}`)
     end
 end
+
+
+--Default data (migrated from separate module to here)--
+module.DefaultData = {
+   Currency = {
+         Coins = 50,
+         Gems = 0,
+      },
+      Level = 0,
+      Exp = 0, --Max exp is calculated based on exp & level. No need to save in here.
+      Rank = "Novice",
+   
+      Inventory = {
+         --Food is NOT stack-able
+         Food = {
+              Burger = {
+                   Name = "Burger",
+                     Type = "Food",
+            },
+           },
+   
+         --Skins ARE stack-able
+         Skins = {
+            Lava = {
+               Name = "Lava",
+                   Type = "Skin",
+               Amount = 1,
+            },
+         },
+   
+         Auras = {
+            Flame = {
+               Name = "Flame",
+               Type = "Aura",
+               Amount = 3,
+            }
+         },
+   
+      },
+   
+      Settings = {
+         Sound = true,
+         Music = true,
+      },
+}
 
 return module
