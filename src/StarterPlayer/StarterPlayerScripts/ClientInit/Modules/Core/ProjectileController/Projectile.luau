@@ -32,7 +32,7 @@ local Utils = Modules.Utils
 local Signal = require(Utils.Signal)
 
 --Constants--
-local MAX_RAYCAST_DISTANCE = 1
+local MAX_RAYCAST_DISTANCE = 0.5
 
 --Variables--
 local ProjectileFolder = Instance.new("Folder")
@@ -77,14 +77,20 @@ RunService.Heartbeat:Connect(function(deltaTime)
 		local hitResult = proj:CheckHit(prevPos, proj.Position)
 		if hitResult then
 			-- Fire hit event
-			proj.OnHit:Fire(hitResult)
+
+			if proj.CurrentHits < proj.MaxHits then
+				proj.OnHit:Fire(hitResult)
+				proj.CurrentHits += 1
+			end
 			
 			-- Handle bouncing
 			if proj.BounceCount < proj.MaxBounces then
+				
 				proj:Bounce(hitResult.Normal)
-				proj.BounceCount = proj.BounceCount + 1
+				proj.BounceCount += 1
 			else
 				-- Max bounces reached, destroy projectile
+
 				proj:Destroy()
 
 			end
@@ -109,11 +115,14 @@ function Projectile.new(data: ProjectileData)
 	self.Lifetime = data.Lifetime or 20
 	self.IsReplicated = data.IsReplicated or false
 
+	self.MaxHits = 1
+	self.CurrentHits = 0
 	-- Physical properties
 	self.Restitution = data.Restitution or 0.35
 	self.Acceleration = data.Acceleration or Vector3.new(0, -50, 0)
 	self.BounceCount = 0
-	self.MaxBounces = data.MaxBounces or 9999
+	self.MaxBounces = data.MaxBounces or 3
+
 	self.RaycastParams = data.RaycastParams or RaycastParams.new()
 	self.Rotation = CFrame.Angles(0, 0, 0)
 	-- Timing
@@ -128,7 +137,9 @@ function Projectile.new(data: ProjectileData)
 	self.OnDestroyed = Signal.new()
 	
 	-- Custom update function
-	self.Update = data.Update
+	self.Update = data.Update or nil
+	
+	
 	
 	return self
 end
@@ -217,11 +228,17 @@ function Projectile:Bounce(hitNormal: Vector3)
 	
 	-- Apply restitution (energy loss)
 	self.Velocity = self.Velocity * self.Restitution
+
+	if self.Velocity.Magnitude < 0.2 then 
+		self:Destroy()
+	end
 	
 	-- Small upward boost to prevent sliding
-	if math.abs(hitNormal.Y) > 0.7 then
-		--self.Position = self.Position + hitNormal * 0.1
-	end
+	--if hitNormal.Y > 0.7 then
+	--	self.Position = self.Position + hitNormal * 0.1
+	--self.Velocity = self.Velocity * Vector3.new(1,0,1)
+
+	--end
 end
 
 function Projectile:Stop()
@@ -241,11 +258,9 @@ function Projectile:Destroy()
 	
 	-- Clean up model
 	if self.Model then
-		
 			self.Model:Destroy()
 			self.Model = nil
-	
-		
+			
 	end
 	
 	-- Remove from active projectiles

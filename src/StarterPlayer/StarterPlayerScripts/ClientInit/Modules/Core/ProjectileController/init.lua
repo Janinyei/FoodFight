@@ -8,20 +8,21 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
 local CAS = game:GetService("ContextActionService")
 local HttpService = game:GetService("HttpService")
-local Debris = game:GetService("Debris")
+
 
 --Modules--
 local Modules = ReplicatedStorage.Modules
-local Utils = Modules.Utils
+
 --Imports--
 local Projectile = require(script.Projectile)
 
 --Data--
-local FoodIndex = require(Modules.Info.FoodIndex)
+local FoodIndex = require(Modules.Info.FoodProjectileIndex)
 
 --Variables--
 local LocalPlayer = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
+local Mouse = LocalPlayer:GetMouse()
 local FoodModels = ReplicatedStorage.Assets.FoodModels
 local LocalProjectiles = {}
 local ReplicatedProjectiles = {}
@@ -37,7 +38,11 @@ function ProjectileController:Init(Core)
 	self.Blacklist = { DebugInstanceFolder }
 	self.RaycastParams.FilterDescendantsInstances = self.Blacklist
 	self.ProjectileCooldowns = {}
+
+	--Core modules/events
 	self.ProjectileEvent = Core:Get("SharedRemotes"):GetEvent("ProjectileEvent")
+	self.ClientDataController = Core:Get("ClientDataController")
+	
 	
 	-- Add local character to blacklist if it exists
 	if LocalPlayer.Character then
@@ -66,7 +71,12 @@ function ProjectileController:Start()
 
 	local function fireProj(inputObject, inputState)
 		if inputState == Enum.UserInputState.End then
-			self:AttemptFire("Burger")
+	
+			local Inventory = self.ClientDataController:GetInventory()
+			local EquippedFood = Inventory.Equipped.Food or nil
+
+
+			self:AttemptFire(EquippedFood)
 		end
 	end
 
@@ -103,10 +113,11 @@ function ProjectileController:AttemptFire(FoodName: string)
 	end
 	
 	--define launch parameters
-	local Direction = Camera.CFrame.LookVector
+	local Origin = HRP.Position + HRP.CFrame.LookVector * 5
+	local Direction = (Mouse.Hit.Position - Origin).Unit
 	local Speed = foodData.Speed or 150
 	local Velocity = Direction * Speed
-	local Origin = HRP.Position + HRP.CFrame.LookVector * 5
+	
 	
 	-- Generate unique ID
 	local ProjectileId = self:GenerateProjectileId()
@@ -118,23 +129,12 @@ function ProjectileController:AttemptFire(FoodName: string)
 		Velocity = Velocity,
 		Owner = LocalPlayer,
 		Restitution = foodData.Restitution,
-		Acceleration = Vector3.new(0, foodData.Gravity or -90, 0),
+		Acceleration = foodData.Gravity,
 		MaxBounces = foodData.MaxBounces,
 		MaxDistance = 1000,
 		RaycastParams = self.RaycastParams,
 		Lifetime = 30,
-		Update = foodData.DebugMode and function(deltaTime, projectile)
-			--debug part (optional)
-			local part = Instance.new("Part")
-			part.Parent = DebugInstanceFolder
-			part.Position = projectile.Position
-			part.Size = Vector3.new(0.5, 0.5, 0.5)
-			part.Anchored = true
-			part.CanCollide = false
-			part.Transparency = 0.9
-			part.Color = Color3.fromRGB(0, 255, 0)
-			Debris:AddItem(part, 10)
-		end or nil,
+		Update = foodData.Update,
 	}
 
 	-- Create food model
@@ -172,7 +172,11 @@ function ProjectileController:AttemptFire(FoodName: string)
 		-- Check if we hit a player
 		local hitInstance = hitResult.Instance
 		local humanoid = hitInstance.Parent:FindFirstChildOfClass("Humanoid")
-		
+
+		if foodData.OnHit then 
+			foodData.OnHit(NewProj, hitResult)
+		end
+
 		if humanoid and hitInstance.Parent ~= LocalPlayer.Character then
 			local hitPlayer = Players:GetPlayerFromCharacter(hitInstance.Parent)
 			
@@ -212,8 +216,6 @@ function ProjectileController:AttemptFire(FoodName: string)
 
 	-- Set cooldown
 	self.ProjectileCooldowns[FoodName] = currentTime
-
-
 end
 
 function ProjectileController:StartReplicationListener()
@@ -234,6 +236,7 @@ function ProjectileController:StartReplicationListener()
 			
 			-- Get food data
 			local foodData = FoodIndex[ProjData.FoodName] or {}
+			
 
 			-- Create replicated projectile
 			local ReplicatedProjectileData = {
@@ -241,25 +244,14 @@ function ProjectileController:StartReplicationListener()
 				Origin = ProjData.Origin,
 				Velocity = ProjData.Velocity,
 				Owner = ProjData.Owner,
-				Restitution = foodData.Restitution or 0.5,
-				Acceleration = Vector3.new(0, foodData.Gravity or -90, 0),
-				MaxBounces = foodData.MaxBounces or 3,
+				Restitution = foodData.Restitution,
+				Acceleration = foodData.Gravity,
+				MaxBounces = foodData.MaxBounces,
 				MaxDistance = 1000,
 				RaycastParams = self.RaycastParams,
 				Lifetime = 30,
 				IsReplicated = true,
-				Update = foodData.DebugMode and function(deltaTime, projectile)
-					--debug part for replicated
-					local part = Instance.new("Part")
-					part.Parent = DebugInstanceFolder
-					part.Position = projectile.Position
-					part.Size = Vector3.new(0.5, 0.5, 0.5)
-					part.Anchored = true
-					part.CanCollide = false
-					part.Transparency = 0.9
-					part.Color = Color3.fromRGB(0, 0, 255)
-					Debris:AddItem(part, 10)
-				end or nil,
+				Update = foodData.Update,
 			}
 
 			-- Create replicated projectile

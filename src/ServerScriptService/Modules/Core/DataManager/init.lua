@@ -97,6 +97,13 @@ module.DefaultData = {
 
 	Inventory = {
 		--Food is NOT stack-able
+
+		Equipped = {
+			Food = "Egg",
+			Trails = "Fire",
+			Auras = "" --can't set to nil cuz ProfileStore deletes nil keys
+		},
+
 		Food = {
 			Burger = {
 				Name = "Burger",
@@ -104,11 +111,16 @@ module.DefaultData = {
 			},
 		},
 
-		--Skins ARE stack-able
-		Skins = {
-			Lava = {
-				Name = "Lava",
-				Type = "Skin",
+		Trails = {
+			Basic = {
+				Name = "Basic",
+				Type = "Trails",
+				Amount = 1,
+			},
+
+			Fire = {
+				Name = "Fire",
+				Type = "Trails",
 				Amount = 1,
 			},
 		},
@@ -116,7 +128,7 @@ module.DefaultData = {
 		Auras = {
 			Flame = {
 				Name = "Flame",
-				Type = "Aura",
+				Type = "Auras",
 				Amount = 3,
 			},
 		},

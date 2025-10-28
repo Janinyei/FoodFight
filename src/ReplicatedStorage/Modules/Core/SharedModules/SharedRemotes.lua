@@ -9,7 +9,8 @@ function SharedRemotes:Init()
 		"DataEvent",
 		"CurrencyEvent",
         "InventoryEvent",
-		"ProjectileEvent"
+		"ProjectileEvent",
+		"TimerEvent",
 	}
 
 	self.Events = nil

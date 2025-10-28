@@ -14,40 +14,47 @@ return {
     Burger = {
         BaseDamage = 5,
         Cooldown = 0.3,
-        Price = 0
+
+        OnHit = function(proj, hitResult)
+            print("burger on hit event")
+        end
+
+    },
+
+    ChiliPepper = {
+        BaseDamage = 4,
+        Cooldown = 3,
+        SpecialDamage = 2, --burn damage
+        
     },
 
     Tomato = {
         BaseDamage = 8,
         Cooldown = 0.4,
-        Price = 250,
     },
 
     Soda = {
         BaseDamage = 5,
         Cooldown = 0.4,
-        Price = 250,
+       
     },
 
     Egg = {
-      
+        BaseDamage = 4,
+        Cooldown = 0.2,
+        SpecialDamage = 3, --chicken damage
+        MaxBounces = 0,
+        OnHit = function(proj, hitResult)
+            print("spawn chickens")
+        end
     },
 
     Grapes = {
-
+        BaseDamage = 5,
+        Cooldown = 3,
     },
   
-    Watermelon = {
-        BaseDamage = 15,
-        SpecialDamage = 10,
-        BlastRadius = 10,
-        KnockbackForce = 50,
-        KnockbackDuration = 0.5,
-
-        OnHit = function(proj)
-            
-        end
-    },
+   
 
 }
 

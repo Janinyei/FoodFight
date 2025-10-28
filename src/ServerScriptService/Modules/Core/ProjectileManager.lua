@@ -8,13 +8,12 @@ local RunService = game:GetService("RunService")
 
 --Modules--
 local Modules = ReplicatedStorage.Modules
-local FoodIndex = require(Modules.Info.FoodIndex)
+local FoodIndex = require(Modules.Info.FoodProjectileIndex)
 
 --Events
 
 --Constants
 local MAX_PROJECTILES_PER_PLAYER = 500
-local MAX_FIRE_RATE = 10
 local POSITION_TOLERANCE = 20
 local HIT_VALIDATION_DISTANCE = 30
 local PROJECTILE_TIMEOUT = 30

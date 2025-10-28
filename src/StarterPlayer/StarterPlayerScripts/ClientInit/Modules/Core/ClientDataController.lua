@@ -1,3 +1,5 @@
+--Purpose: Create a controlled and replicated clone of player's data for centralized access
+
 -- Services
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -24,11 +26,7 @@ end
 -- Signals
 function ClientDataCacheController:Init(Core)
 	--create cache
-	self.Currency = {
-		Coins = 0,
-		Gems = 0,
-	}
-	self.Inventory = {}
+	self.DataCache = {}
 	-- Signals
 	self.CurrencyChanged = Signal.new()
 	self.InventoryChanged = Signal.new()
@@ -37,20 +35,20 @@ function ClientDataCacheController:Init(Core)
 
 	--Events--
 	self.DataEvent = SharedRemotes:GetEvent("DataEvent")
+
 	self.CurrencyEvent = SharedRemotes:GetEvent("CurrencyEvent")
 	self.InventoryEvent = SharedRemotes:GetEvent("InventoryEvent")
 
-	--load initial values
+	--load initial tables
 	local InitData = self.DataEvent:Invoke(30)
 	print(InitData) --test(delete later)
 
-	self.Currency = InitData.Currency
-	self.Inventory = InitData.Gems
-end
+	self.DataCache.Currency = InitData.Currency
+	self.DataCache.Inventory = InitData.Inventory
 
-function ClientDataCacheController:Start()
+	
 
-	--instantiate connections(idk if I should put this in here or Init() but either should work fine)
+	--instantiate connections
 	self.CurrencyEvent:Connect(function(Currency: currencyType)
 		self.Currency = Currency
 		updateCurrencyUI(Currency)
@@ -64,18 +62,26 @@ function ClientDataCacheController:Start()
 	end)
 end
 
--- Wrappers
-function ClientDataCacheController:GetCurrency()
-	return self.Currency
+function ClientDataCacheController:Start()
+
+
 end
 
+-- Wrappers
+
+--Currency--
+function ClientDataCacheController:GetCurrency()
+	return self.DataCache.Currency
+end
+
+--Inventory--
 function ClientDataCacheController:GetInventory()
-	return self.Inventory
+	return self.DataCache.Inventory
 end
 
 function ClientDataCacheController:GetItem(ItemType: string, ItemName: string)
-	if self.Inventory[ItemType] then
-		return self.Inventory[ItemType][ItemName]
+	if self.DataCache.Inventory[ItemType] then
+		return self.DataCache.Inventory[ItemType][ItemName]
 	end
 	return nil
 end
