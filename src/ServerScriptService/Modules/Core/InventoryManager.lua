@@ -16,7 +16,7 @@ function InventoryManager:Init(Core)
 end
 
 function InventoryManager:Start()
-	DataManager.DataLoaded:Connect(function(Player: Player, Data: {})
+	DataManager.DataLoaded:Connect(function(Player: Player, Data)
 		self.InventoryEvent:Fire(true, Player, Data.Inventory)
 	end)
 end

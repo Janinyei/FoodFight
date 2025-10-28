@@ -14,7 +14,6 @@ local Debris = game:GetService("Debris")
 local Modules = ReplicatedStorage.Modules
 local Utils = Modules.Utils
 --Imports--
-local Warp = require(Utils.Warp)
 local Projectile = require(script.Projectile)
 
 --Data--
@@ -32,13 +31,13 @@ DebugInstanceFolder.Parent = workspace
 DebugInstanceFolder.Name = "DebugInstances"
 
 --Projectile Controller Methods
-function ProjectileController:Init()
+function ProjectileController:Init(Core)
 	self.RaycastParams = RaycastParams.new()
 	self.RaycastParams.FilterType = Enum.RaycastFilterType.Exclude
 	self.Blacklist = { DebugInstanceFolder }
 	self.RaycastParams.FilterDescendantsInstances = self.Blacklist
 	self.ProjectileCooldowns = {}
-	self.ProjectileEvent = Warp.Client("ProjectileEvent")
+	self.ProjectileEvent = Core:Get("SharedRemotes"):GetEvent("ProjectileEvent")
 	
 	-- Add local character to blacklist if it exists
 	if LocalPlayer.Character then
@@ -221,6 +220,7 @@ function ProjectileController:StartReplicationListener()
 	self.ProjectileEvent:Connect(function(action, ProjData)
 		if action == "Fire" then
 			-- Don't replicate our own projectiles
+
 			if ProjData.Owner == LocalPlayer then 
 				return 
 			end

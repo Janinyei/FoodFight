@@ -1,7 +1,4 @@
 -- Services
-local Players = game:GetService("Players")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-
 
 -- Modules
 local CurrencyManager = {}
@@ -16,7 +13,7 @@ function CurrencyManager:Init(Core)
 end
 
 function CurrencyManager:Start()
-	DataManager.DataLoaded:Connect(function(Player: Player, Data: {})
+	DataManager.DataLoaded:Connect(function(Player: Player, Data)
         print(Data.Currency)
 		self.CurrencyEvent:Fire(true, Player, Data.Currency)
 	end)

@@ -8,7 +8,8 @@ function SharedRemotes:Init()
 	self.RemoteNames = {
 		"DataEvent",
 		"CurrencyEvent",
-        "InventoryEvent"
+        "InventoryEvent",
+		"ProjectileEvent"
 	}
 
 	self.Events = nil
