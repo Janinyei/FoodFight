@@ -18,12 +18,21 @@ function PurchaseManager:Init()
     
 end
 
-function  PurchaseManager:Start()
+function PurchaseManager:Start()
 
+
+   
 end
 
 function PurchaseManager:PurchaseItem(Player, ItemData)
 
 end
+
+
+function PurchaseManager:PurchaseGamePass(Player, PassId)
+    
+end
+
+
 
 return PurchaseManager

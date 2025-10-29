@@ -30,6 +30,7 @@ function ClientDataCacheController:Init(Core)
 	-- Signals
 	self.CurrencyChanged = Signal.new()
 	self.InventoryChanged = Signal.new()
+	self.ProgressionChanged = Signal.new()
 
 	local SharedRemotes = Core:Get("SharedRemotes")
 
@@ -38,6 +39,7 @@ function ClientDataCacheController:Init(Core)
 
 	self.CurrencyEvent = SharedRemotes:GetEvent("CurrencyEvent")
 	self.InventoryEvent = SharedRemotes:GetEvent("InventoryEvent")
+	self.ProgressionEvent = SharedRemotes:GetEvent("ProgressionEvent")
 
 	--load initial tables
 	local InitData = self.DataEvent:Invoke(30)
@@ -60,7 +62,14 @@ function ClientDataCacheController:Init(Core)
 		updateInventoryUI(Inventory)
 		self.InventoryChanged:Fire(Inventory)
 	end)
+
+
+	self.ProgressionEvent:Connect(function(ProgressionData, MaxExp) --since max exp isn't saved, we keep it separate
+		print(ProgressionData, MaxExp)
+		self.ProgressionChanged:Fire(ProgressionData, MaxExp)
+	end)
 end
+
 
 function ClientDataCacheController:Start()
 

@@ -119,7 +119,7 @@ function Projectile.new(data: ProjectileData)
 	self.CurrentHits = 0
 	-- Physical properties
 	self.Restitution = data.Restitution or 0.35
-	self.Acceleration = data.Acceleration or Vector3.new(0, -50, 0)
+	self.Acceleration = data.Acceleration or Vector3.new(0, -20, 0)
 	self.BounceCount = 0
 	self.MaxBounces = data.MaxBounces or 3
 
@@ -138,8 +138,6 @@ function Projectile.new(data: ProjectileData)
 	
 	-- Custom update function
 	self.Update = data.Update or nil
-	
-	
 	
 	return self
 end

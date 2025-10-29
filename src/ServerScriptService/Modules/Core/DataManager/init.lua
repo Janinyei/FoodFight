@@ -91,9 +91,13 @@ module.DefaultData = {
 		Coins = 50,
 		Gems = 0,
 	},
-	Level = 0,
-	Exp = 0, --Max exp is calculated based on exp & level. No need to save in here.
-	Rank = "Novice",
+
+	Progression = {
+		Level = 0,
+		Exp = 0, --Max exp is calculated based on exp & level. No need to save in here.
+		Rank = "Novice",
+	},
+
 
 	Inventory = {
 		--Food is NOT stack-able
