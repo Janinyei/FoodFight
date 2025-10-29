@@ -20,7 +20,7 @@ function Core:Init(ModulesToLoad: Folder)
 	end
 
 	-- Gather ALL modules into a single table at once
-	local allModules = {}
+	self.SortedModules = {}
 
 	-- Helper to collect modules from any folder
 	local function collectModules(folder)
@@ -29,7 +29,7 @@ function Core:Init(ModulesToLoad: Folder)
 		end
 		for _, module in folder:GetDescendants() do
 			if module:IsA("ModuleScript") then
-				table.insert(allModules, {
+				table.insert(self.SortedModules, {
 					module = module,
 					priority = module:GetAttribute("Priority") or 0,
 					name = module.Name,
@@ -43,12 +43,12 @@ function Core:Init(ModulesToLoad: Folder)
 	collectModules(ModulesToLoad)
 
 	-- Single sort operation
-	table.sort(allModules, function(a, b)
+	table.sort(self.SortedModules, function(a, b)
 		return a.priority > b.priority or (a.priority == b.priority and a.name < b.name)
 	end)
 
 	-- Load modules into cache
-	for i, data in ipairs(allModules) do
+	for i, data in ipairs(self.SortedModules) do
 		-- Load
 		local success, result = pcall(require, data.module)
 		if success then
@@ -59,7 +59,7 @@ function Core:Init(ModulesToLoad: Folder)
 	end
 	--Initialize in priority order
 
-	for i, data in ipairs(allModules) do
+	for i, data in ipairs(self.SortedModules) do
 		local LoadedModule = self._modules[data.name]
 		if LoadedModule then
 			if typeof(LoadedModule) == "table" and LoadedModule.Init then
@@ -84,7 +84,7 @@ function Core:Start()
 		return
 	end
 
-	for name, module in pairs(self._modules) do
+	--[[for name, module in pairs(self._modules) do
 		if type(module) == "table" and module.Start then
 			task.spawn(function()
 				local success, err = pcall(module.Start, module, self)
@@ -93,7 +93,22 @@ function Core:Start()
 				end
 			end)
 		end
+	end]]
+
+
+	for i, data in ipairs(self.SortedModules) do 
+		local LoadedModule = self._modules[data.name]
+			if LoadedModule then
+				if typeof(LoadedModule) == "table" and LoadedModule.Start then
+					local startSuccess, err = pcall(LoadedModule.Start, LoadedModule, self)
+					if not startSuccess then
+						warn(string.format("[Core] Init error in '%s': %s", data.name, err))
+					end
+				end
+			end
 	end
+
+
 
 	self._started = true
 end
