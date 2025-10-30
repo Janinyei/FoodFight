@@ -154,6 +154,10 @@ function ProjectileController:AttemptFire(FoodName: string)
 
 	-- Fire projectile
 	NewProj:Fire()
+
+	NewProj.OnFire:Connect(function()
+		print("handle visual effects")
+	end)
     
 	
 	-- Send to server for replication
@@ -172,6 +176,7 @@ function ProjectileController:AttemptFire(FoodName: string)
 		-- Check if we hit a player
 		local hitInstance = hitResult.Instance
 		local humanoid = hitInstance.Parent:FindFirstChildOfClass("Humanoid")
+		
 
 		if foodData.OnHit then 
 			foodData.OnHit(NewProj, hitResult)
@@ -199,6 +204,8 @@ function ProjectileController:AttemptFire(FoodName: string)
 				Timestamp = tick()
 			})
 		end
+
+
 	end)
 	
 	-- Setup cleanup

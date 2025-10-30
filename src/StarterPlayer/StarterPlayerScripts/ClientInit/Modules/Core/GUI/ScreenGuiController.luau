@@ -1,4 +1,4 @@
---purpose: Hold general utilities and controls UI navigation, etc
+--purpose: Loads entire game GUI, holds general utilities and controls UI navigation. Very important script
 --note: if something's not working, make sure that the module's priority attribute is working
 --janin 10/28/25
 
@@ -39,15 +39,11 @@ function ScreenGuiController:LoadGUI()
     for _, UI in ReplicatedStorage.UICache:GetChildren() do 
         if UI:IsA("ScreenGui") then 
             UI.Parent = PlayerGui
-            print(UI.Name)
             if table.find(self.ScreenNames, UI.Name) ~= nil then
-            self.Screens[UI.Name] = UI
+            self.Screens[UI.Name] = UI 
             end
         end
     end
-
-    
-
     ReplicatedStorage.UICache:Destroy()-- removes empty folder after unloading contents
 end
 

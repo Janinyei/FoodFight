@@ -39,7 +39,7 @@ function RoundManager:Init(Core)
 
         InGame = {
             Start = function()
-                self.Timer:SetTime(50)
+                self.Timer:SetTime(120)
             end,
 
             OnTick = function(TimeRemaining : number)

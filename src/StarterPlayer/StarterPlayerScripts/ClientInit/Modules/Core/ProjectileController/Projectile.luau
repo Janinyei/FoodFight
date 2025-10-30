@@ -135,6 +135,7 @@ function Projectile.new(data: ProjectileData)
 	-- Events
 	self.OnHit = Signal.new()
 	self.OnDestroyed = Signal.new()
+	self.OnFire = Signal.new()
 	
 	-- Custom update function
 	self.Update = data.Update or nil
@@ -201,6 +202,8 @@ function Projectile:Fire()
 	self.Active = true
 	self.StartTime = tick()
 	ActiveProjectiles[self.Id] = self
+
+	self.OnFire:Fire(self)
 end
 
 function Projectile:CheckHit(startPos: Vector3, endPos: Vector3)

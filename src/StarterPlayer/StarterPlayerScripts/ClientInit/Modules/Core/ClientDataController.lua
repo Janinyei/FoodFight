@@ -45,10 +45,16 @@ function ClientDataCacheController:Init(Core)
 	local InitData = self.DataEvent:Invoke(30)
 	print(InitData) --test(delete later)
 
+
 	self.DataCache.Currency = InitData.Currency
 	self.DataCache.Inventory = InitData.Inventory
+	self.DataCache.Progression = InitData.Progression
 
-	
+	self.CurrencyChanged:Connect(function(CurrencyData)
+				print("Currency Loaded")
+				print(CurrencyData)
+		end)
+		
 
 	--instantiate connections
 	self.CurrencyEvent:Connect(function(Currency: currencyType)
@@ -65,6 +71,7 @@ function ClientDataCacheController:Init(Core)
 
 
 	self.ProgressionEvent:Connect(function(ProgressionData, MaxExp) --since max exp isn't saved, we keep it separate
+		self.Progression = ProgressionData
 		print(ProgressionData, MaxExp)
 		self.ProgressionChanged:Fire(ProgressionData, MaxExp)
 	end)
@@ -72,6 +79,12 @@ end
 
 
 function ClientDataCacheController:Start()
+
+	--Fire off events once to load GUI
+	self.CurrencyChanged:Fire(self.DataCache.Currency)
+	self.ProgressionChanged:Fire(self.DataCache.Progression, 123123)
+	
+	
 
 
 end
