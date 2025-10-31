@@ -40,9 +40,11 @@ function ProjectileController:Init(Core)
 	self.ProjectileCooldowns = {}
 
 	--Core modules/events
+	self.Core = Core
 	self.ProjectileEvent = Core:Get("SharedRemotes"):GetEvent("ProjectileEvent")
 	self.ClientDataController = Core:Get("ClientDataController")
-	
+	self.VFXController = Core:Get("VFXController")
+
 	
 	-- Add local character to blacklist if it exists
 	if LocalPlayer.Character then
@@ -177,10 +179,11 @@ function ProjectileController:AttemptFire(FoodName: string)
 		local hitInstance = hitResult.Instance
 		local humanoid = hitInstance.Parent:FindFirstChildOfClass("Humanoid")
 		
-
-		if foodData.OnHit then 
-			foodData.OnHit(NewProj, hitResult)
-		end
+		self.VFXController:PlayVFX({
+			Position = hitResult.Position,
+			Normal = hitResult.Normal,
+			FoodName = FoodName
+		})
 
 		if humanoid and hitInstance.Parent ~= LocalPlayer.Character then
 			local hitPlayer = Players:GetPlayerFromCharacter(hitInstance.Parent)

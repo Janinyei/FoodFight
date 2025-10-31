@@ -14,11 +14,6 @@ return {
     Burger = {
         BaseDamage = 5,
         Cooldown = 0.3,
-
-        OnHit = function(proj, hitResult)
-            print("burger on hit event")
-        end
-
     },
 
     ChiliPepper = {
@@ -44,9 +39,6 @@ return {
         Cooldown = 0.2,
         SpecialDamage = 3, --chicken damage
         MaxBounces = 0,
-        OnHit = function(proj, hitResult)
-            print("spawn chickens")
-        end
     },
 
     Grapes = {
