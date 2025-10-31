@@ -17,23 +17,55 @@ return {
         return Vector3.new(Position.X, Position.Y, Position.Z)
     end,
 
-    Emit = function(Obj)
-        for _, Child in Obj:GetDescendants() do
-            if Child:IsA("ParticleEmitter") then
-                Child:Emit(20)
+    Emit = function(Obj: Model | BasePart)
+        for _, Particle in Obj:GetDescendants() do
+            if Particle:IsA("ParticleEmitter") then
+                Particle:Emit(Particle:GetAttribute("EmitCount") or 10)
             end
         end
     end,
 
-    Tween = function(Instance, Properties, TweenInfo, Callback)
+    Tween = function(Instance: Model | BasePart, Properties, Info, Callback)
         local TweenService = game:GetService("TweenService")
-        TweenInfo = TweenInfo or TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-        local Tween = TweenService:Create(Instance, TweenInfo, Properties)
-        Tween:Play()
-        if Callback then
-            Tween.Completed:Connect(Callback)
+        Info = Info or TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+        
+        if Instance:IsA("Model") then
+            local Parts = {}
+            for _, Descendant in Instance:GetDescendants() do
+                if Descendant:IsA("BasePart") then
+                    table.insert(Parts, Descendant)
+                end
+            end
+            
+            local Tweens = {}
+            for _, Part in Parts do
+                local Tween = TweenService:Create(Part, Info, Properties)
+                Tween:Play()
+                table.insert(Tweens, Tween)
+            end
+            
+            if Callback then
+                local Cnt = 0
+                local T = #Tweens
+                for _, Tween in Tweens do
+                    Tween.Completed:Once(function()
+                        Cnt = Cnt + 1
+                        if Cnt >= T then
+                            Callback()
+                        end
+                    end)
+                end
+            end
+            
+            return Tweens
+        else
+            local Tween = TweenService:Create(Instance, TweenInfo, Properties)
+            Tween:Play()
+            if Callback then
+                Tween.Completed:Once(Callback)
+            end
+            return Tween
         end
-        return Tween
     end,
 
     TweenModel = function(Model, StartPos, TPos, Duration, Callback)

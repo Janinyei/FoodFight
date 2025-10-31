@@ -21,7 +21,7 @@ function Egg:OnHit(_, HitResult)
     )
     
     Functions.Emit(Wind)
-    Debris:AddItem(Wind, 5)
+    Debris:AddItem(Wind, 3)
     
     for _ = 1, 3 do
         local Chicken = ChickenTemplate:Clone()
@@ -38,6 +38,12 @@ function Egg:OnHit(_, HitResult)
             GroundPos.Z + math.random(-3, 3)
         )
         Functions.TweenModel(Chicken, SpawnPos, EndPos, 0.5)
+        
+        task.delay(1.2, function()
+            Functions.Tween(Chicken, {Transparency = 1}, nil, function()
+                Chicken:Destroy()
+            end)
+        end)
     end
 end
 
