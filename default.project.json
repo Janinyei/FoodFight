@@ -1,5 +1,5 @@
 {
-  "name": "TouchGrassSim",
+  "name": "food fight",
   "tree": {
     "$className": "DataModel",
     "ReplicatedStorage": {
@@ -23,6 +23,8 @@
         "$className": "StarterPlayerScripts",
         "$ignoreUnknownInstances": true,
         "$path": "src/StarterPlayer/StarterPlayerScripts"
+
+        
       },
        "StarterCharacterScripts": {
         "$className": "StarterCharacterScripts",
