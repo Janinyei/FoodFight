@@ -12,9 +12,11 @@ local HttpService = game:GetService("HttpService")
 
 --Modules--
 local Modules = ReplicatedStorage.Modules
+local Utils = Modules.Utils
 
 --Imports--
 local Projectile = require(script.Projectile)
+local Highlights = require(Utils.Highlights)
 
 --Data--
 local FoodIndex = require(Modules.Info.FoodProjectileIndex)
@@ -187,6 +189,11 @@ function ProjectileController:AttemptFire(FoodName: string)
 
 		if humanoid and hitInstance.Parent ~= LocalPlayer.Character then
 			local hitPlayer = Players:GetPlayerFromCharacter(hitInstance.Parent)
+			local hitCharacter = hitInstance.Parent
+			
+			if hitCharacter and hitCharacter:IsA("Model") then
+				Highlights:HighlightModel(hitCharacter)
+			end
 			
 			-- Send hit validation to server
 			self.ProjectileEvent:Fire(true,"Hit", {
@@ -278,6 +285,22 @@ function ProjectileController:StartReplicationListener()
 			
 			ReplicatedProjectile:LoadModel(FoodModel)
 			ReplicatedProjectile:Fire()
+			
+			ReplicatedProjectile.OnHit:Connect(function(hitResult)
+				local hitInstance = hitResult.Instance
+				local humanoid = hitInstance.Parent:FindFirstChildOfClass("Humanoid")
+				
+				if humanoid and hitInstance.Parent and hitInstance.Parent:IsA("Model") then
+					local hitCharacter = hitInstance.Parent
+					Highlights:HighlightModel(hitCharacter)
+				end
+				
+				self.VFXController:PlayVFX({
+					Position = hitResult.Position,
+					Normal = hitResult.Normal,
+					FoodName = ProjData.FoodName
+				})
+			end)
 			
 			-- Setup cleanup
 			ReplicatedProjectile.OnDestroyed:Connect(function()
