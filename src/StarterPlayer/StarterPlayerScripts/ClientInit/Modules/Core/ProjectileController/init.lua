@@ -359,8 +359,7 @@ function ProjectileController:StartReplicationListener()
 			local damage = ProjData.Damage
 			local attacker = ProjData.Attacker
 			local isKill = ProjData.IsKill
-			
-			print(ProjData)
+
 			if target and target.Character then
 				DamageNumbers:ShowDamage(target.Character, damage)
 

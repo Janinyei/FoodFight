@@ -189,6 +189,8 @@ function ProjectileManager:HandleProjectileHit(player, data)
 		if humanoid then
 			local damage = foodData.BaseDamage or 10
 			local wasAlive = humanoid.Health > 0
+			local damage = foodData.BaseDamage or 10
+			local wasAlive = humanoid.Health > 0
 			humanoid:TakeDamage(damage)
 			local isDead = humanoid.Health <= 0
 

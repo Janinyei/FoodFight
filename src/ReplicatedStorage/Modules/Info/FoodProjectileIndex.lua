@@ -7,7 +7,6 @@ SpecialDamage[number] : amount of damage that a projectile does with it's abilit
 KnockbackForce[number] : self-explanatory
 KnockbackDuration[number] : amount of time force is applied
 BlastRadius [number] : reach of the blast hitbox 
-
 ]] 
 
 return {
