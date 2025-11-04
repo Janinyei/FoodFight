@@ -187,8 +187,20 @@ function ProjectileManager:HandleProjectileHit(player, data)
 		-- Apply damage
 		local humanoid = targetCharacter:FindFirstChildOfClass("Humanoid")
 		if humanoid then
-			local damage = foodData.Damage or 10
+			local damage = foodData.BaseDamage or 10
+			local wasAlive = humanoid.Health > 0
 			humanoid:TakeDamage(damage)
+			local isDead = humanoid.Health <= 0
+
+			print(player,damage,data.HitPlayer)
+
+			-- for damage indicator
+			self.ProjectileEvent:Fire(player, "Damage", {
+				Target = data.HitPlayer,
+				Damage = damage,
+				Attacker = player,
+				IsKill = isDead and wasAlive
+			})
 
 			-- Mark as hit
 			projectile.HitPlayers[data.HitPlayer] = true

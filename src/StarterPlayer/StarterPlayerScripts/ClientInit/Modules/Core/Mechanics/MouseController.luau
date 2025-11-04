@@ -2,7 +2,7 @@
 --Purpose: control mouse in different states and part of the game for easy flow and access for players to use UI
 --janin 11/1/25
 
---Note: Eventually will have to refactor this since the WaitForChilds may cause yielding issues with the module loader
+--Note: Eventually will have to refactor this since the WaitForChilds could cause yielding issues with the module loader
 
 
 
@@ -73,15 +73,8 @@ end
 
 function MouseController:Start()
 	print(CameraModule)
-
-   -- self:Lock()
- self:Unlock()
-    --test code(this works thankfully)
-    task.delay(5, function()
-       -- self:ChangeMouseBehavior(Enum.MouseBehavior.Default)
-    	  self:Unlock()
-    end)
-	
+	self:Unlock()
+   
 end
 
 function MouseController:Lock()

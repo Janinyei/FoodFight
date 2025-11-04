@@ -17,6 +17,9 @@ local Utils = Modules.Utils
 --Imports--
 local Projectile = require(script.Projectile)
 local Highlights = require(Utils.Highlights)
+local DamageNumbers = require(Utils.DamageNumbers)
+local KillMessage = require(script.Parent.KillMessage)
+local FloatingXP = require(script.Parent.FloatingXP)
 
 --Data--
 local FoodIndex = require(Modules.Info.FoodProjectileIndex)
@@ -349,6 +352,24 @@ function ProjectileController:StartReplicationListener()
 			elseif ReplicatedProjectiles[ProjectileId] then
 				ReplicatedProjectiles[ProjectileId]:Destroy()
 				ReplicatedProjectiles[ProjectileId] = nil
+			end
+
+		elseif action == "Damage" then
+			local target = ProjData.Target
+			local damage = ProjData.Damage
+			local attacker = ProjData.Attacker
+			local isKill = ProjData.IsKill
+			
+			print(ProjData)
+			if target and target.Character then
+				DamageNumbers:ShowDamage(target.Character, damage)
+
+				-- if killed, show kill message, and exp
+				if isKill and attacker == LocalPlayer then
+					local targetName = target.DisplayName or target.Name
+					KillMessage:ShowKill(targetName, 100, 100)
+					FloatingXP:ShowXP(100)
+				end
 			end
 		end
 	end)
