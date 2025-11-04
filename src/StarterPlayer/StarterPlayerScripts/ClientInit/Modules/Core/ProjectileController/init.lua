@@ -18,9 +18,6 @@ local Utils = Modules.Utils
 local Projectile = require(script.Projectile)
 local Highlights = require(Utils.Highlights)
 local DamageNumbers = require(Utils.DamageNumbers)
-local KillMessage = require(script.Parent.KillMessage)
-local FloatingXP = require(script.Parent.FloatingXP)
-
 --Data--
 local FoodIndex = require(Modules.Info.FoodProjectileIndex)
 
@@ -191,8 +188,12 @@ function ProjectileController:AttemptFire(FoodName: string)
 		})
 
 		if humanoid and hitInstance.Parent ~= LocalPlayer.Character then
-			local hitPlayer = Players:GetPlayerFromCharacter(hitInstance.Parent)
 			local hitCharacter = hitInstance.Parent
+			local hitPlayer = Players:GetPlayerFromCharacter(hitCharacter)
+			
+			if not hitPlayer and hitCharacter:IsA("Model") then
+				hitPlayer = hitCharacter
+			end
 			
 			if hitCharacter and hitCharacter:IsA("Model") then
 				Highlights:HighlightModel(hitCharacter)
@@ -240,6 +241,7 @@ end
 
 function ProjectileController:StartReplicationListener()
 	self.ProjectileEvent:Connect(function(action, ProjData)
+		print(action,ProjData)
 		if action == "Fire" then
 			-- Don't replicate our own projectiles
 
@@ -319,6 +321,7 @@ function ProjectileController:StartReplicationListener()
 			end)
 
 		elseif action == "Hit" then
+			print("HIT",ProjData)
 			-- Handle hit confirmation from server
 			local ProjectileId = ProjData.ProjectileId
 			
@@ -360,15 +363,37 @@ function ProjectileController:StartReplicationListener()
 			local attacker = ProjData.Attacker
 			local isKill = ProjData.IsKill
 
-			if target and target.Character then
-				DamageNumbers:ShowDamage(target.Character, damage)
+			print("DAMAGE", ProjData)
 
-				-- if killed, show kill message, and exp
-				if isKill and attacker == LocalPlayer then
-					local targetName = target.DisplayName or target.Name
-					KillMessage:ShowKill(targetName, 100, 100)
-					FloatingXP:ShowXP(100)
+			if not target then
+				return
+			end
+
+			local targetCharacter
+			local targetName
+
+			if target:IsA("Player") then
+				targetCharacter = target.Character
+				if not targetCharacter then
+					return
 				end
+				targetName = target.DisplayName or target.Name
+			elseif target:IsA("Model") then
+				-- It's an NPC/model, use the model directly
+				if not target.Parent then
+					return
+				end
+				targetCharacter = target
+				targetName = target.Name
+			else
+				-- Invalid target
+				return
+			end
+			DamageNumbers:ShowDamage(targetCharacter, damage)
+			-- If killed, show kill message and exp
+			if isKill and attacker == LocalPlayer then
+				--Core:Get("KillMessage"):ShowKill(targetName, 100, 100)
+				--FloatingXP:ShowXP(100)
 			end
 		end
 	end)

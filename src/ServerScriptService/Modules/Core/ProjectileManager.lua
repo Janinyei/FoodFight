@@ -162,20 +162,30 @@ function ProjectileManager:HandleProjectileHit(player, data)
 	local foodData = FoodIndex[projectile.FoodName] or {}
 	local shouldDestroy = false
 
-	-- Handle player hit
+	-- Handle player/NPC hit
 	if data.HitPlayer then
-		-- Validate target
-		if not data.HitPlayer.Parent then
-			return
-		end
-
-		local targetCharacter = data.HitPlayer.Character
-		if not targetCharacter then
-			return
-		end
-
-		-- Don't allow self-hits
-		if data.HitPlayer == player then
+		-- Check if HitPlayer is a Player or a Model
+		local targetCharacter
+		if data.HitPlayer:IsA("Player") then
+			if not data.HitPlayer.Parent then
+				return
+			end
+			targetCharacter = data.HitPlayer.Character
+			if not targetCharacter then
+				return
+			end
+			
+			if data.HitPlayer == player then
+				return
+			end
+		elseif data.HitPlayer:IsA("Model") then
+			-- It's an NPC/model, use the model directly
+			if not data.HitPlayer.Parent then
+				return
+			end
+			targetCharacter = data.HitPlayer
+		else
+			-- Invalid hit target
 			return
 		end
 
@@ -189,15 +199,11 @@ function ProjectileManager:HandleProjectileHit(player, data)
 		if humanoid then
 			local damage = foodData.BaseDamage or 10
 			local wasAlive = humanoid.Health > 0
-			local damage = foodData.BaseDamage or 10
-			local wasAlive = humanoid.Health > 0
 			humanoid:TakeDamage(damage)
 			local isDead = humanoid.Health <= 0
-
-			print(player,damage,data.HitPlayer)
-
+			
 			-- for damage indicator
-			self.ProjectileEvent:Fire(player, "Damage", {
+			self.ProjectileEvent:Fire(true, player, "Damage", {
 				Target = data.HitPlayer,
 				Damage = damage,
 				Attacker = player,
@@ -295,11 +301,9 @@ function ProjectileManager:StartCleanupLoop()
 				if currentTime - projectile.StartTime > PROJECTILE_TIMEOUT then
 					self:RemoveProjectile(id)
 
-					for _, client in pairs(Players:GetPlayers()) do
-						self.ProjectileEvent:Fire(client, "Destroyed", {
-							ProjectileId = id,
-						})
-					end
+					self.ProjectileEvent:Fires(true, "Destroyed", {
+						ProjectileId = id,
+					})
 				end
 			end
 		end
