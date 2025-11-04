@@ -75,7 +75,7 @@ function MouseController:Start()
 	print(CameraModule)
 
    -- self:Lock()
-
+ self:Unlock()
     --test code(this works thankfully)
     task.delay(5, function()
        -- self:ChangeMouseBehavior(Enum.MouseBehavior.Default)
