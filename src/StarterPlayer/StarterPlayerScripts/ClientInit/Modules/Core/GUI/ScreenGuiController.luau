@@ -16,25 +16,42 @@ local ScreenGuiController = {}
 
 function ScreenGuiController:Init()
     self.Screens = {}   
-    self.ScreenNames = {"Shop", "Settings", "Foods"}
+    self.ScreenNames = {"HUD", "KillCam", "Menu", "Store"} --list of screens that cannot be enabled at the same time
+    self.CurrentScreen = nil
     self:LoadGUI() --Puts all ScreenGui in PlayerGui
 end
 
 function ScreenGuiController:Start()
 --don't put self:LoadGUI in here ts will not work lol
+self:SetScreen("Menu")
 end
 
-function ScreenGuiController:SetScreen(Screen : ScreenGui) --name of Screen Gui
-    
+function ScreenGuiController:SetScreen(ScreenName : string) --name of Screen Gui
+    --closes current screen if there is one
+    if self.CurrentScreen then 
+        self:CloseScreen(self.CurrentScreen.Name)
+    end
+
+    --opens new screen
+    local Screen = self.Screens[ScreenName]
+    if Screen then
+        Screen.Enabled = true
+        self.CurrentScreen = Screen
+    else
+        warn("Unknown screen name: " .. ScreenName)
+    end
 end
 
-function ScreenGuiController:CloseScreen(Screen : ScreenGui)
-    
+function ScreenGuiController:CloseScreen(ScreenName : string)
+    local Screen = self.Screens[ScreenName]
+    if Screen then
+        Screen.Enabled = false
+        self.CurrentScreen = nil
+    end
 end
 
 --Purpose: to avoid endless WaitForChilds, trust me, it works
 function ScreenGuiController:LoadGUI()
-
     --unload UI cache folder contents
     for _, UI in ReplicatedStorage.UICache:GetChildren() do 
         if UI:IsA("ScreenGui") then 

@@ -2,6 +2,10 @@
 --Purpose: control mouse in different states and part of the game for easy flow and access for players to use UI
 --janin 11/1/25
 
+--Note: Eventually will have to refactor this since the WaitForChilds may cause yielding issues with the module loader
+
+
+
 --Services--
 local Players = game:GetService("Players")
 local UIS = game:GetService("UserInputService")
@@ -70,12 +74,12 @@ end
 function MouseController:Start()
 	print(CameraModule)
 
-    self:Lock()
+   -- self:Lock()
 
     --test code(this works thankfully)
     task.delay(5, function()
        -- self:ChangeMouseBehavior(Enum.MouseBehavior.Default)
-      --  self:Unlock()
+    	  self:Unlock()
     end)
 	
 end

@@ -14,14 +14,6 @@ local ClientDataCacheController = {}
 type currencyType = { Coins: number, Gems: number }
 type inventoryType = { [string]: { Name: string, Type: string, Amount: number } }
 
--- Local Functions
-local function updateCurrencyUI(Currency: currencyType)
-	print(Currency)
-end
-
-local function updateInventoryUI(Inventory: inventoryType)
-	print(Inventory)
-end
 
 -- Signals
 function ClientDataCacheController:Init(Core)
@@ -53,27 +45,24 @@ function ClientDataCacheController:Init(Core)
 	self.CurrencyChanged:Connect(function(CurrencyData)
 				print("Currency Loaded")
 				print(CurrencyData)
-		end)
+	end)
 		
 
 	--instantiate connections
-	self.CurrencyEvent:Connect(function(Currency: currencyType)
-		self.Currency = Currency
-		updateCurrencyUI(Currency)
-		self.CurrencyChanged:Fire(Currency)
+	self.CurrencyEvent:Connect(function(CurrencyData: currencyType)
+		self.Currency = CurrencyData
+		self.CurrencyChanged:Fire(CurrencyData)
 	end)
 
 	self.InventoryEvent:Connect(function(Inventory: inventoryType)
 		self.Inventory = Inventory
-		updateInventoryUI(Inventory)
 		self.InventoryChanged:Fire(Inventory)
 	end)
 
 
-	self.ProgressionEvent:Connect(function(ProgressionData, MaxExp) --since max exp isn't saved, we keep it separate
+	self.ProgressionEvent:Connect(function(ProgressionData) --since max exp isn't saved, we keep it separate
 		self.Progression = ProgressionData
-		print(ProgressionData, MaxExp)
-		self.ProgressionChanged:Fire(ProgressionData, MaxExp)
+		self.ProgressionChanged:Fire(ProgressionData)
 	end)
 end
 
@@ -82,10 +71,8 @@ function ClientDataCacheController:Start()
 
 	--Fire off events once to load GUI
 	self.CurrencyChanged:Fire(self.DataCache.Currency)
-	self.ProgressionChanged:Fire(self.DataCache.Progression, 123123)
+	self.ProgressionChanged:Fire(self.DataCache.Progression)
 	
-	
-
 
 end
 

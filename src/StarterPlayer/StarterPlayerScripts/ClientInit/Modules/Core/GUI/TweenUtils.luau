@@ -22,9 +22,25 @@ TweenUtils.BouncyHoverWithUIScale = function(UIElement : GuiObject, UIScale : UI
     
        UIElement.MouseLeave:Connect(function()
            ShrinkTween:Play()
-         
      end)
 end
+
+--Be sure that these GuiObjects have UIScales
+TweenUtils.GrowOnHover =  function(UIElement : GuiObject, UIScale : UIScale, Diff :number, TwnInfo : TweenInfo)
+
+    local DefaultScale = 1
+    local GrowTween = TweenService:Create(UIScale, TwnInfo , {Scale = DefaultScale + Diff})
+    local ShrinkTween = TweenService:Create(UIScale, TwnInfo, {Scale = DefaultScale})
+
+    UIElement.MouseEnter:Connect(function()
+        GrowTween:Play()
+    end)
+
+    UIElement.MouseLeave:Connect(function()
+        ShrinkTween:Play()
+    end)
+end
+
 
 --Rotates on hover
 TweenUtils.RotateOnHover = function(UIElement : GuiObject, GoalRot, TwnInfo)
@@ -66,8 +82,15 @@ TweenUtils.ButtonClickTween = function(UIElement : ImageButton | TextButton, UIS
         end
 
     end)
+end
 
 
+--Tween Bar
+
+TweenUtils.TweenBar = function(UIElement : GuiObject, Percentage : number, Duration : number)
+    local Info = TweenInfo.new(Duration, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut)
+    local BarTween = TweenService:Create(UIElement, Info , {Size = UDim2.fromScale(Percentage, 1)})
+    BarTween:Play()
 end
 
 

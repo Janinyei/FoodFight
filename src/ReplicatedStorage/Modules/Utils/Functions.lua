@@ -1,4 +1,5 @@
 local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
 return {
     Raycast = function(Origin, Direction, Parameters)
         Parameters = Parameters or RaycastParams.new()
@@ -26,7 +27,6 @@ return {
     end,
 
     Tween = function(Instance: Model | BasePart, Properties, Info, Callback)
-        local TweenService = game:GetService("TweenService")
         Info = Info or TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
         
         if Instance:IsA("Model") then
@@ -89,7 +89,5 @@ return {
                 end
             end
         end)
-        
-        return Connection
-    end
+    end,
 }
