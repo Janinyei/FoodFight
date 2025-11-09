@@ -1,4 +1,7 @@
 {
     "luau-lsp.sourcemap.rojoProjectFile": "default.project.json",
-    "stylua.targetReleaseVersion": "latest"
+    "stylua.targetReleaseVersion": "latest",
+    "cSpell.words": [
+        "janin"
+    ]
 }

@@ -8,7 +8,11 @@ local Egg = {}
 local VFXFolder = ReplicatedStorage.VFX
 local AssetsFolder = ReplicatedStorage.Assets
 
-function Egg:OnHit(_, HitResult)
+function Egg:Init(Core)
+    self.VFXController = Core:Get("VFXController")
+end
+
+function Egg:OnHit(HitResult)
     local Wind = VFXFolder.ChickenWind:Clone()
     local ChickenTemplate = AssetsFolder.Chicken
     Wind.Parent = workspace.Debris

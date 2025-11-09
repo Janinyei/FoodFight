@@ -35,17 +35,11 @@ function ClientDataCacheController:Init(Core)
 
 	--load initial tables
 	local InitData = self.DataEvent:Invoke(30)
-	print(InitData) --test(delete later)
-
-
+	
 	self.DataCache.Currency = InitData.Currency
 	self.DataCache.Inventory = InitData.Inventory
 	self.DataCache.Progression = InitData.Progression
 
-	self.CurrencyChanged:Connect(function(CurrencyData)
-				print("Currency Loaded")
-				print(CurrencyData)
-	end)
 		
 
 	--instantiate connections

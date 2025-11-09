@@ -38,13 +38,11 @@ function ProgressionManager:IncreaseExp(Player: Player, Data, Amount: number)
 	local Level = ProgressionData.Level
 
 	local MaxExp = self:CalculateMaxExp(Level)
-
-	print(MaxExp)
-	print(Exp)
+	--Level up
 	if Exp >= MaxExp then
-		print("lvl up")
 		repeat
-			print("leveling up")
+			--repetitive logic to make sure player levels/ranks up correctly
+
 			--Level up logic
 			ProgressionData.Level = math.clamp(ProgressionData.Level + 1, 0, LEVEL_CAP)
 			ProgressionData.Exp -= MaxExp
@@ -58,10 +56,9 @@ function ProgressionManager:IncreaseExp(Player: Player, Data, Amount: number)
 
 			self.ProgressionEvent:Fire(true, Player, ProgressionData, MaxExp) --sends to client cache. sent MaxExp since it's not being saved
 
-		until ProgressionData.Exp < MaxExp
-		print("done incrementing")
+		until ProgressionData.Exp < MaxExp --ends when exp is finally less than max
 	else
-		self.ProgressionEvent:Fire(true, Player, ProgressionData)
+		self.ProgressionEvent:Fire(true, Player, ProgressionData) --if the player doesn't need to level up then immediately replicate
 	end
 end
 

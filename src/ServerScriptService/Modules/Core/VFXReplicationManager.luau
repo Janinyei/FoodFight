@@ -10,7 +10,7 @@ end
 
 
 function VFXReplicationManager:Start()
-    self.VFXEvent:Connect(function(Player : Player ,data)
+    self.VFXEvent:Connect(function(Player : Player , data)
         print("from vfx replicator on server:")
         print(data)
         self.VFXEvent:FireExcept(true, {Player}, data)

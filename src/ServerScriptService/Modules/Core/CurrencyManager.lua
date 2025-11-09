@@ -14,7 +14,6 @@ end
 
 function CurrencyManager:Start()
 	DataManager.DataLoaded:Connect(function(Player: Player, Data)
-        print(Data.Currency)
 		self.CurrencyEvent:Fire(true, Player, Data.Currency)
 	end)
 end
