@@ -7,10 +7,7 @@ local Debris = game:GetService("Debris")
 local Egg = {}
 local AssetsFolder = ReplicatedStorage.Assets
 local Effects = AssetsFolder.Effects
-local EggVFXFolder = Effects.Food.Egg
-
-
-local EggVFX = VFXFolder
+local EggVFXFolder = Effects.Food.Egg.Visual
 
 function Egg:Init(Core)
     self.VFXController = Core:Get("VFXController")
@@ -18,54 +15,27 @@ end
 
 function Egg:OnHit(VFXData)
     
+    local EggSplash = EggVFXFolder.EggSplash:Clone()
+    EggSplash.Position = VFXData.HitResult.Position
+    EggSplash.Parent = workspace
+    Debris:AddItem(EggSplash, 5)
 
-   self.VFXController:PlayVFX("FoodSplat", {
+    Functions.Emit(EggSplash)
+
+
+   self.VFXController:PlayEffect("FoodSplat", {
         Position = VFXData.HitResult.Position,
         Normal = VFXData.HitResult.Normal,
         Obj = VFXData.HitResult.Instance,
-        FoodName = VFXData.Name
+        FoodName = VFXData.Name,
+        Color = Color3.fromRGB(227, 251, 198),
+        Radius = 10
     })
 end
 
 
 function Egg:SpecialHit(VFXData, VFXController)
-    local Wind = VFXFolder.ChickenWind:Clone()
-    local ChickenTemplate = AssetsFolder.Chicken
-    local HitResult = VFXData.HitResult
-    Wind.Parent = workspace.Debris
-    
-    local GroundPos = Functions.GetGroundPos(HitResult.Position)
-    Wind.Position = Vector3.new(
-        HitResult.Position.X,
-        GroundPos.Y + (Wind.Size.Y / 2),
-        HitResult.Position.Z
-    )
-    
-    Functions.Emit(Wind)
-    Debris:AddItem(Wind, 3)
-    
-    for _ = 1, 3 do
-        local Chicken = ChickenTemplate:Clone()
-        Chicken.Parent = workspace.Debris
-    
-        local SpawnPos = Vector3.new(
-            GroundPos.X + math.random(-3, 3),
-            GroundPos.Y - 5,
-            GroundPos.Z + math.random(-3, 3)
-        )
-        local EndPos = Vector3.new(
-            GroundPos.X + math.random(-3, 3),
-            GroundPos.Y + 2,
-            GroundPos.Z + math.random(-3, 3)
-        )
-        Functions.TweenModel(Chicken, SpawnPos, EndPos, 0.5)
-        
-        task.delay(1.2, function()
-            Functions.Tween(Chicken, {Transparency = 1}, nil, function()
-                Chicken:Destroy()
-            end)
-        end)
-    end
+ 
 end
 
 return Egg

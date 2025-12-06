@@ -76,4 +76,20 @@ function CameraController:StopAim()
 	self.TrajectoryBeam:Disable()
 end
 
+function CameraController:SetSpectate(IsSpectating: boolean, Position: Vector3?)
+	if IsSpectating and Position then
+		Camera.CameraType = Enum.CameraType.Scriptable
+		local cameraPos = Position + Vector3.new(100, 80, 100)
+		Camera.CFrame = CFrame.lookAt(cameraPos, Position)
+	else
+		Camera.CameraType = Enum.CameraType.Custom
+		if LocalPlayer.Character then
+			local humanoid = LocalPlayer.Character:FindFirstChild("Humanoid")
+			if humanoid then
+				Camera.CameraSubject = humanoid
+			end
+		end
+	end
+end
+
 return CameraController

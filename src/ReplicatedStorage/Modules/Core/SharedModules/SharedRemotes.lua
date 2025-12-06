@@ -12,7 +12,8 @@ function SharedRemotes:Init()
 		"ProjectileEvent",
 		"TimerEvent",
 		"ProgressionEvent",
-		"VFXEvent"
+		"VFXEvent",
+		"CharacterEvent"
 	}
 
 	self.Events = nil

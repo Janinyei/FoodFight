@@ -23,6 +23,7 @@ function MenuGui:Init(Core)
 	self.ClientDataController = Core:Get("ClientDataController")
     self.ScreenGuiController = Core:Get("ScreenGuiController")
     self.MouseController = Core:Get("MouseController")
+    self.CharacterEvent = Core:Get("SharedRemotes"):GetEvent("CharacterEvent")
 
 	--loads menu components--
 	self:InitProgressionGui()
@@ -110,6 +111,7 @@ function MenuGui:InitBottomFrame()
 				if UIFrame == PlayButton then
 					self.ScreenGuiController:SetScreen("HUD")
                     self.MouseController:Lock()
+					self.CharacterEvent:Fire(true,"RequestJoin")
 				elseif UIFrame == StoreButton then
                     self.ScreenGuiController:SetScreen("Store")
 				elseif UIFrame == SettingsButton then

@@ -23,8 +23,6 @@ return {
     end,
 
     Emit = function(Obj: Model | BasePart)
-
-        
         for _, Particle in Obj:GetDescendants() do
             if Particle:IsA("ParticleEmitter") then
                 task.delay(Particle:GetAttribute("EmitDelay") or 0.001, function()
