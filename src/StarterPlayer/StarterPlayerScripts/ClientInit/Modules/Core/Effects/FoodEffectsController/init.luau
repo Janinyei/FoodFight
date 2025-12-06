@@ -43,7 +43,7 @@ function FoodEffectsController:OnHit(vfxData)
 
     local AbilityActivated = false
 
-    if foodModule and foodModule.OnHit and AbilityActivated then
+    if foodModule and foodModule.OnHit then
         -- Let the food module handle its own vfx hit logic
         foodModule:OnHit(vfxData, self.VFXController)
     else

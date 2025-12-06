@@ -49,6 +49,7 @@ function ProjectileController:Init(Core)
 	self.FoodEffectsController = Core:Get("FoodEffectsController")
 	self.TrajectoryBeam = Core:Get("TrajectoryBeam")
 	self.CameraController = Core:Get("CameraController")
+	self.TrailsController = Core:Get("TrailsController")
 
 	--Signals
 	self.OnDamaged = Signal.new()
@@ -187,9 +188,11 @@ function ProjectileController:AttemptFire(FoodName: string)
 
 	-- Fire projectile
 	NewProj:Fire()
+	
+	self.TrailsController:LoadTrail(NewProj.Model)
 
 	NewProj.OnFire:Connect(function()
-		print("handle visual effects")
+		
 	end)
 
 	-- Send to server for replication
@@ -202,6 +205,7 @@ function ProjectileController:AttemptFire(FoodName: string)
 		FoodName = FoodName,
 		Timestamp = tick(),
 	})
+
 
 	-- Setup hit connection
 	NewProj.OnHit:Connect(function(hitResult)

@@ -104,8 +104,8 @@ module.DefaultData = {
 
 		Equipped = {
 			Food = "Egg",
-			Trails = "Fire",
-			Auras = "" --can't set to nil cuz ProfileStore deletes nil keys
+			Trails = "Basic",
+			Auras = "idk" --can't set to nil cuz ProfileStore deletes nil keys
 		},
 
 		Food = {

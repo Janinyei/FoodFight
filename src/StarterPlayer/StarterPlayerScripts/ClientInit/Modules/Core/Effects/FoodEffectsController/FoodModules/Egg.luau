@@ -5,14 +5,30 @@ local Functions = require(game.ReplicatedStorage.Modules.Utils.Functions)
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Debris = game:GetService("Debris")
 local Egg = {}
-local VFXFolder = ReplicatedStorage.VFX
 local AssetsFolder = ReplicatedStorage.Assets
+local Effects = AssetsFolder.Effects
+local EggVFXFolder = Effects.Food.Egg
+
+
+local EggVFX = VFXFolder
 
 function Egg:Init(Core)
     self.VFXController = Core:Get("VFXController")
 end
 
-function Egg:OnHit(VFXData, VFXController)
+function Egg:OnHit(VFXData)
+    
+
+   self.VFXController:PlayVFX("FoodSplat", {
+        Position = VFXData.HitResult.Position,
+        Normal = VFXData.HitResult.Normal,
+        Obj = VFXData.HitResult.Instance,
+        FoodName = VFXData.Name
+    })
+end
+
+
+function Egg:SpecialHit(VFXData, VFXController)
     local Wind = VFXFolder.ChickenWind:Clone()
     local ChickenTemplate = AssetsFolder.Chicken
     local HitResult = VFXData.HitResult
@@ -31,7 +47,7 @@ function Egg:OnHit(VFXData, VFXController)
     for _ = 1, 3 do
         local Chicken = ChickenTemplate:Clone()
         Chicken.Parent = workspace.Debris
-
+    
         local SpawnPos = Vector3.new(
             GroundPos.X + math.random(-3, 3),
             GroundPos.Y - 5,

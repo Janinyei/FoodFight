@@ -14,7 +14,8 @@ export type ProjectileData = {
 	MaxDistance: number,
 	Update: ((deltaTime: number, projectile: any) -> any)?,
 	RaycastParams: RaycastParams,
-	IsReplicated: boolean?
+	IsReplicated: boolean?,
+	AngularVelocity: Vector3? -- Added to type
 }
 
 local Projectile = {}
@@ -117,14 +118,22 @@ function Projectile.new(data: ProjectileData)
 
 	self.MaxHits = 1
 	self.CurrentHits = 0
+	
 	-- Physical properties
 	self.Restitution = data.Restitution or 0.35
 	self.Acceleration = data.Acceleration or Vector3.new(0, -50, 0)
 	self.BounceCount = 0
 	self.MaxBounces = data.MaxBounces or 3
-
 	self.RaycastParams = data.RaycastParams or RaycastParams.new()
-	self.Rotation = CFrame.Angles(0, 0, 0)
+	
+	-- Rotation properties
+	self.AngularVelocity = data.AngularVelocity or Vector3.new(
+		math.random(-10, 10),
+		math.random(-10, 10),
+		math.random(-10, 10)
+	)
+	self.Rotation = CFrame.new() 
+	
 	-- Timing
 	self.StartTime = tick()
 	self.LastUpdateTime = self.StartTime
@@ -167,14 +176,12 @@ function Projectile:LoadModel(Model: Model | BasePart)
 		self.Model.Parent = ProjectileFolder
 	end
 	
-	-- Set initial position
+	-- Set initial position with rotation
 	if self.Model then
 		if self.Model:IsA("Model") then
-			--self.Model:PivotTo(CFrame.lookAt(self.Position, self.Position + self.Velocity))
 			self.Model:PivotTo(CFrame.new(self.Position) * self.Rotation)
 		else
-			warn("cannot set model cframe, instance is not a model")
-			--self.Model.CFrame = CFrame.lookAt(self.Position, self.Position + self.Velocity)
+			self.Model.CFrame = CFrame.new(self.Position) * self.Rotation
 		end
 	end
 end
@@ -186,12 +193,21 @@ function Projectile:UpdatePhysics(deltaTime: number)
 	-- Update position
 	self.Position = self.Position + (self.Velocity * deltaTime)
 	
-	-- Update visual model
+	-- Update rotation based on angular velocity
+	self.Rotation = self.Rotation * CFrame.fromEulerAnglesXYZ(
+		self.AngularVelocity.X * deltaTime,
+		self.AngularVelocity.Y * deltaTime,
+		self.AngularVelocity.Z * deltaTime
+	)
+	
+	-- Update visual model with position and rotation
 	if self.Model then
 		local GoalCFrame = CFrame.new(self.Position) * self.Rotation
-
+		
 		if self.Model:IsA("Model") then
 			self.Model:PivotTo(GoalCFrame)
+		else
+			self.Model.CFrame = GoalCFrame
 		end
 	end
 	
@@ -229,17 +245,20 @@ function Projectile:Bounce(hitNormal: Vector3)
 	
 	-- Apply restitution (energy loss)
 	self.Velocity = self.Velocity * self.Restitution
+	
+	-- Add some spin variation on bounce (optional - makes it more realistic)
+	self.AngularVelocity = self.AngularVelocity + Vector3.new(
+		math.random(-5, 5),
+		math.random(-5, 5),
+		math.random(-5, 5)
+	)
+	
+	-- Reduce spin slightly on bounce (energy loss)
+	self.AngularVelocity = self.AngularVelocity * 0.9
 
 	if self.Velocity.Magnitude < 0.2 then 
 		self:Destroy()
 	end
-	
-	-- Small upward boost to prevent sliding
-	--if hitNormal.Y > 0.7 then
-	--	self.Position = self.Position + hitNormal * 0.1
-	--self.Velocity = self.Velocity * Vector3.new(1,0,1)
-
-	--end
 end
 
 function Projectile:Stop()
@@ -259,9 +278,8 @@ function Projectile:Destroy()
 	
 	-- Clean up model
 	if self.Model then
-			self.Model:Destroy()
-			self.Model = nil
-			
+		self.Model:Destroy()
+		self.Model = nil
 	end
 	
 	-- Remove from active projectiles
@@ -270,8 +288,7 @@ function Projectile:Destroy()
 	-- Clean up signals
 	self.OnHit:Destroy()
 	self.OnDestroyed:Destroy()
+	self.OnFire:Destroy()
 end
-
-
 
 return Projectile
