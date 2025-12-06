@@ -164,9 +164,8 @@ end
 
 --displays hitmarker temporarily
 function CombatGui:ShowHitmarker(Duration: number)
-	local Crosshair = self.HUD.Crosshair
-	local Hitmarker = Crosshair.Hitmarker
-	print("tween hitmarker")
+
+	--[[print("tween hitmarker")
 	local HitmarkerTween = Functions.Tween(
 		Hitmarker,
 		{
@@ -181,6 +180,21 @@ function CombatGui:ShowHitmarker(Duration: number)
 			end)
 		end
 	)
+	]]
+
+
+	local Crosshair = self.HUD.Crosshair
+	local Hitmarker = Crosshair.Hitmarker
+
+	AnimNation.target(Hitmarker, {
+		Speed = 100
+	}, {ImageTransparency = 0}):AndThen(function()
+AnimNation.target(Hitmarker, {
+		Speed = 10
+	}, {ImageTransparency = 1})
+	end)
+
+	
 end
 
 

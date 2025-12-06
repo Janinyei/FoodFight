@@ -48,6 +48,7 @@ function ProjectileController:Init(Core)
 	self.VFXController = Core:Get("VFXController")
 	self.FoodEffectsController = Core:Get("FoodEffectsController")
 	self.TrajectoryBeam = Core:Get("TrajectoryBeam")
+	self.CameraController = Core:Get("CameraController")
 
 	--Signals
 	self.OnDamaged = Signal.new()
@@ -101,7 +102,7 @@ function ProjectileController:Start()
 
 		elseif inputState == Enum.UserInputState.End then
 			if inputObject.UserInputType == Enum.UserInputType.MouseButton2 then
-				self.TrajectoryBeam:Disable()
+				self.CameraController:StopAim()
 			end
 		end
 	end
@@ -113,32 +114,7 @@ end
 
 --repetitive code very nice 😐 (will refactor in 10 years)
 function ProjectileController:AttemptAim(FoodName: string)
-	if LocalPlayer.Character == nil then
-		return
-	end
-
-	local HRP = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-	if not HRP then
-		return
-	end
-
-	local function getTrajectoryData() --necessary for frame-by-frame update for aiming
-		local foodData = FoodIndex[FoodName]
-
-		local Origin = HRP.Position + HRP.CFrame.LookVector * 5
-		local Direction = (Mouse.Hit.Position - Origin).Unit
-		local Speed = foodData.Speed or 150
-		local Velocity = Direction * Speed
-
-		return {
-			Origin = Origin,
-			Velocity = Velocity,
-			Gravity = foodData.Gravity or Vector3.new(0, -50, 0),
-			RaycastParams = self.RaycastParams,
-		}
-	end
-
-	self.TrajectoryBeam:Enable(getTrajectoryData)
+	self.CameraController:AimZoom(FoodName, self.RaycastParams)
 end
 
 function ProjectileController:GenerateProjectileId()
@@ -174,7 +150,7 @@ function ProjectileController:AttemptFire(FoodName: string)
 	local Origin = HRP.Position + HRP.CFrame.LookVector * 5
 	local Direction = (Mouse.Hit.Position - Origin).Unit
 	local Speed = foodData.Speed or 150
-	local Velocity = Direction * Speed
+	local Velocity = Direction * Speed + Vector3.new(0,10,0)
 
 	-- Generate unique ID
 	local ProjectileId = self:GenerateProjectileId()
