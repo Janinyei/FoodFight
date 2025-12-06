@@ -5,8 +5,10 @@
 
 local CombatGui = {}
 --Services--
+local Debris = game:GetService("Debris")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
 
 --Modules--
 local Modules = ReplicatedStorage.Modules
@@ -24,11 +26,13 @@ local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 local BillboardGuis = {}
 local ActiveDamageLabels = {}
 
+--Constants--
+local COMBAT_FEEDBACK_LIFETIME = 3
+
 --Gui
 
 function CombatGui:Init(Core)
 	self.ProjectileController = Core:Get("ProjectileController")
-
 	self.HUD = PlayerGui.HUD
 end
 
@@ -39,10 +43,10 @@ function CombatGui:Start()
 		self:ShowDamageIndicator(TargetCharacter, Damage)
 		self:ShowHitmarker(0.35)
 
-		self:ShowKillMessage(LocalPlayer)
-
+	
+		self:FeedbackMessage(TargetPlayer,"Elimination!", 100)
 		if isKill and TargetPlayer then
-			self:ShowKillMessage(TargetPlayer)
+			self:FeedbackMessage(TargetPlayer, "Elimination!", 100)
 		end
 	end)
 end
@@ -180,9 +184,44 @@ function CombatGui:ShowHitmarker(Duration: number)
 end
 
 
-function CombatGui:ShowKillMessage(TargetPlayer,CoinAmount)
-	local EliminationFrame = self.HUD.EliminationFrame
-	local KillMesssageGui = "something" --add a template that allows you to clone the gui later
+function CombatGui:FeedbackMessage(TargetPlayer, Message, PointsReward)
+
+
+	local CombatFeedbackContainer = self.HUD.CombatFeedback
+	local FeedbackFrame = CombatFeedbackContainer.FeedbackFrame:Clone()
+	local FeedbackText = FeedbackFrame.FeedbackText
+	local FeedbackPoints = FeedbackFrame.Reward
+
+	FeedbackFrame.Parent = CombatFeedbackContainer
+	local OriginalSizeY = FeedbackFrame.Size.Y.Scale
+
+	FeedbackText.Text = Message
+	FeedbackPoints.Text = "[+" .. tostring(PointsReward) .. "]"
+	
+	--thin out
+	FeedbackFrame.Size = UDim2.fromScale(FeedbackFrame.Size.X.Scale, 0)
+	FeedbackFrame.Visible = true
+
+	--tween size
+	AnimNation.target(
+		FeedbackFrame,
+		{Speed = 100},
+		{Size = UDim2.fromScale(FeedbackFrame.Size.X.Scale, OriginalSizeY),
+	
+	}
+	)
+
+	task.delay(COMBAT_FEEDBACK_LIFETIME, function()
+		AnimNation.target(
+				FeedbackFrame,
+				{Speed = 100},
+				{Size = UDim2.fromScale(FeedbackFrame.Size.X.Scale, 0)}
+			):AndThen(function()
+				FeedbackFrame:Destroy()
+			end)
+	end)
+
+
 
 	--note: since I'm lazy and don't wanna script custom list behavior I'm just gonna shrink the latest message asap
 	
@@ -190,8 +229,6 @@ function CombatGui:ShowKillMessage(TargetPlayer,CoinAmount)
 	--play sound
 	
 	--set text to the target player's name and coin amount 
-	
-	print("Eliminated ".. TargetPlayer.Name)
 end
 
 return CombatGui
