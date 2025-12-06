@@ -7,8 +7,9 @@ local CharacterController = {}
 function CharacterController:Init(Core)
 	self.Core = Core
 	self.CharacterEvent = Core:Get("SharedRemotes"):GetEvent("CharacterEvent")
-	self.ProjectileController = Core:Get("ProjectileController")
 	self.CameraController = Core:Get("CameraController")
+	self.ScreenGuiController = Core:Get("ScreenGuiController")
+	self.MouseController = Core:Get("MouseController")
 end
 
 function CharacterController:Start()
@@ -25,10 +26,14 @@ end
 
 function CharacterController:SetLobbyState(position)
 	self.CameraController:SetSpectate(true, position)
+	self.ScreenGuiController:SetScreen("Menu")
+	self.MouseController:Unlock()
 end
 
 function CharacterController:SetGameState()
 	self.CameraController:SetSpectate(false)
+	self.ScreenGuiController:SetScreen("HUD")
+	self.MouseController:Lock()
 end
 
 return CharacterController
