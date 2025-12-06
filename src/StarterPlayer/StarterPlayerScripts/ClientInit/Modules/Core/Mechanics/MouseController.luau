@@ -16,6 +16,7 @@ local LocalPlayer = Players.LocalPlayer
 --Constants--
 local MOUSE_LOCK_OFFSET = Vector3.new(3, 0, 0)
 local MOUSE_LOCK_ICON = "rbxassetid://86236387189138"
+local MOUSE_LOCK_ICON = "rbxassetid://103003009346193"
 --Imports--
 
 local PlayerModule = LocalPlayer:WaitForChild("PlayerScripts"):WaitForChild("PlayerModule")

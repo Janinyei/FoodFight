@@ -1,5 +1,9 @@
+
+--note: I would prefer these functions to be their own separate modules in a "Functions" folder. Makes it easier to see from the outside.
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
+local Players = game:GetService("Players")
+
 return {
     Raycast = function(Origin, Direction, Parameters)
         Parameters = Parameters or RaycastParams.new()
@@ -19,9 +23,14 @@ return {
     end,
 
     Emit = function(Obj: Model | BasePart)
+
+        
         for _, Particle in Obj:GetDescendants() do
             if Particle:IsA("ParticleEmitter") then
-                Particle:Emit(Particle:GetAttribute("EmitCount") or 10)
+                task.delay(Particle:GetAttribute("EmitDelay") or 0.001, function()
+                    Particle:Emit(Particle:GetAttribute("EmitCount") or 10)
+                    print("emitting particle")
+                end)
             end
         end
     end,
@@ -59,7 +68,7 @@ return {
             
             return Tweens
         else
-            local Tween = TweenService:Create(Instance, TweenInfo, Properties)
+            local Tween = TweenService:Create(Instance, Info, Properties)
             Tween:Play()
             if Callback then
                 Tween.Completed:Once(Callback)
@@ -90,4 +99,15 @@ return {
             end
         end)
     end,
+
+
+    FindCharacter = function(obj : Instance)
+        if obj and obj:FindFirstAncestorWhichIsA("Model") then
+            local character = obj:FindFirstAncestorOfClass("Model")
+            local isPlayer = Players:GetPlayerFromCharacter(character)
+            if character and character:FindFirstChild("Humanoid") then
+                return character, isPlayer
+            end
+        end
+    end
 }

@@ -64,16 +64,4 @@ function ScreenGuiController:LoadGUI()
     ReplicatedStorage.UICache:Destroy()-- removes empty folder after unloading contents
 end
 
-
---HUD--
-function ScreenGuiController:HideHUD()
-    
-end
-
-function ScreenGuiController:ShowHUD()
-    
-end
-
-
-
 return ScreenGuiController

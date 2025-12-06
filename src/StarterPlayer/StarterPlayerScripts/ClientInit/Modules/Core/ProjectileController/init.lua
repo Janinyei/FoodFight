@@ -16,8 +16,8 @@ local Utils = Modules.Utils
 
 --Imports--
 local Projectile = require(script.Projectile)
-local Highlights = require(Utils.Highlights)
-local DamageNumbers = require(Utils.DamageNumbers)
+local DamageHighlights = require(Utils.DamageHighlights)
+local Signal = require(Utils.Signal)
 --Data--
 local FoodIndex = require(Modules.Info.FoodProjectileIndex)
 
@@ -37,7 +37,7 @@ DebugInstanceFolder.Name = "DebugInstances"
 function ProjectileController:Init(Core)
 	self.RaycastParams = RaycastParams.new()
 	self.RaycastParams.FilterType = Enum.RaycastFilterType.Exclude
-	self.Blacklist = { DebugInstanceFolder }
+	self.Blacklist = { DebugInstanceFolder, workspace.VisualEffectsCache }
 	self.RaycastParams.FilterDescendantsInstances = self.Blacklist
 	self.ProjectileCooldowns = {}
 
@@ -49,6 +49,8 @@ function ProjectileController:Init(Core)
 	self.FoodEffectsController = Core:Get("FoodEffectsController")
 	self.TrajectoryBeam = Core:Get("TrajectoryBeam")
 
+	--Signals
+	self.OnDamaged = Signal.new()
 	-- Add local character to blacklist if it exists
 	if LocalPlayer.Character then
 		table.insert(self.Blacklist, LocalPlayer.Character)
@@ -74,41 +76,54 @@ function ProjectileController:Start()
 	--whenever someone clicks, create and fire a projectile
 	local fireAction = "FireProjectile"
 
-	local function fireProj(inputObject, inputState)
+	local function fireProj(actionName, inputState, inputObject)
+
+		print(inputObject)
+
+		if actionName ~= fireAction then
+			return
+		end
+
 		if inputState == Enum.UserInputState.Begin then
-			--aiming
-			--use trajectory beam to assist players in aiming
-			local Inventory = self.ClientDataController:GetInventory()
-			local EquippedFood = Inventory.Equipped.Food or nil
-			self:AttemptAim(EquippedFood)
+			
+			if inputObject.UserInputType == Enum.UserInputType.MouseButton1 then
+				--firing
+				local Inventory = self.ClientDataController:GetInventory()
+				local EquippedFood = Inventory.Equipped.Food or nil
+				self:AttemptFire(EquippedFood)
+			elseif inputObject.UserInputType == Enum.UserInputType.MouseButton2 then
+				--aiming
+				--use trajectory beam to assist players in aiming
+				local Inventory = self.ClientDataController:GetInventory()
+				local EquippedFood = Inventory.Equipped.Food or nil
+				self:AttemptAim(EquippedFood)
+			end
 
 		elseif inputState == Enum.UserInputState.End then
-			--firing
-			local Inventory = self.ClientDataController:GetInventory()
-			local EquippedFood = Inventory.Equipped.Food or nil
-			self:AttemptFire(EquippedFood)
+			if inputObject.UserInputType == Enum.UserInputType.MouseButton2 then
+				self.TrajectoryBeam:Disable()
+			end
 		end
 	end
 
-	CAS:BindAction(fireAction, fireProj, false, Enum.UserInputType.MouseButton1)
+	CAS:BindAction(fireAction, fireProj, false, Enum.UserInputType.MouseButton1, Enum.UserInputType.MouseButton2)
 	--setup replication event here to receive visual effects and such
 	self:StartReplicationListener()
 end
 
 --repetitive code very nice 😐 (will refactor in 10 years)
-function ProjectileController:AttemptAim(FoodName : string)
+function ProjectileController:AttemptAim(FoodName: string)
 	if LocalPlayer.Character == nil then
 		return
 	end
-	
+
 	local HRP = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
 	if not HRP then
 		return
 	end
 
-	local function getTrajectoryData() --necessary for frame-by-frame update
+	local function getTrajectoryData() --necessary for frame-by-frame update for aiming
 		local foodData = FoodIndex[FoodName]
-	
 
 		local Origin = HRP.Position + HRP.CFrame.LookVector * 5
 		local Direction = (Mouse.Hit.Position - Origin).Unit
@@ -118,17 +133,12 @@ function ProjectileController:AttemptAim(FoodName : string)
 		return {
 			Origin = Origin,
 			Velocity = Velocity,
-			Gravity = foodData.Gravity or Vector3.new(0,-30,0),
-			RaycastParams = self.RaycastParams
+			Gravity = foodData.Gravity or Vector3.new(0, -50, 0),
+			RaycastParams = self.RaycastParams,
 		}
-		
 	end
-	
-
 
 	self.TrajectoryBeam:Enable(getTrajectoryData)
-	
-	
 end
 
 function ProjectileController:GenerateProjectileId()
@@ -159,6 +169,7 @@ function ProjectileController:AttemptFire(FoodName: string)
 		return
 	end
 
+	--self.TrajectoryBeam:Disable()
 	--define launch parameters
 	local Origin = HRP.Position + HRP.CFrame.LookVector * 5
 	local Direction = (Mouse.Hit.Position - Origin).Unit
@@ -216,21 +227,19 @@ function ProjectileController:AttemptFire(FoodName: string)
 		Timestamp = tick(),
 	})
 
-	local SpecialActivated = true
 	-- Setup hit connection
 	NewProj.OnHit:Connect(function(hitResult)
 		-- Check if we hit a player
 		local hitInstance = hitResult.Instance
 		local humanoid = hitInstance.Parent:FindFirstChildOfClass("Humanoid")
 
-	
 		self.FoodEffectsController:OnHit({
 			Name = FoodName,
 			HitResult = { --have to create a table instead of just passing in regular raycastresult objects because roblox doesn't replicate RaycastResults fsr
 				Instance = hitResult.Instance,
 				Position = hitResult.Position,
 				Normal = hitResult.Normal,
-			}
+			},
 		})
 
 		--Check if the projectile hits a player or not
@@ -242,8 +251,9 @@ function ProjectileController:AttemptFire(FoodName: string)
 				hitPlayer = hitCharacter
 			end
 
+			--highlights player that was hit
 			if hitCharacter and hitCharacter:IsA("Model") then
-				Highlights:HighlightModel(hitCharacter)
+				DamageHighlights:HighlightModel(hitCharacter)
 			end
 
 			-- Send hit validation to server
@@ -344,7 +354,7 @@ function ProjectileController:StartReplicationListener()
 
 				if humanoid and hitInstance.Parent and hitInstance.Parent:IsA("Model") then
 					local hitCharacter = hitInstance.Parent
-					Highlights:HighlightModel(hitCharacter)
+					DamageHighlights:HighlightModel(hitCharacter)
 				end
 
 				self.VFXController:PlayVFX({
@@ -406,8 +416,6 @@ function ProjectileController:StartReplicationListener()
 			local attacker = ProjData.Attacker
 			local isKill = ProjData.IsKill
 
-			print("DAMAGE", ProjData)
-
 			if not target then
 				return
 			end
@@ -432,8 +440,8 @@ function ProjectileController:StartReplicationListener()
 				-- Invalid target
 				return
 			end
-			
-			DamageNumbers:ShowDamage(targetCharacter, damage)
+
+			self.OnDamaged:Fire(targetCharacter, damage, isKill)
 			-- If killed, show kill message and exp
 			if isKill and attacker == LocalPlayer then
 				--Core:Get("KillMessage"):ShowKill(targetName, 100, 100)

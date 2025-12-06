@@ -46,11 +46,14 @@ function Highlights:HighlightModel(Model, Color, Duration)
 	HighlightInstance.OutlineColor = Color or DefaultHighlightColor
 	HighlightInstance.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
 
+	--
 	AnimNation.tween(HighlightInstance, {
 		t = 0
+		
 	}, {
 		FillTransparency = 0.5
 	}):Await()
+
 	AnimNation.tween(HighlightInstance, {
 		t = Duration or 0.5
 	}, {

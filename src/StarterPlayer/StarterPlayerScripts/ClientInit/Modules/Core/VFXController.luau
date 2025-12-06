@@ -9,11 +9,13 @@ function VFXController:Init(Core)
 	self.ActiveEffects = {}
 end
 
-function VFXController:PlayEffect(vfxData) -- all roads lead to OOP 💔
+function VFXController:PlayEffect(Name, vfxData) -- all roads lead to OOP 💔
 	-- Generic VFX playing logic
-	local vfxModule = self.VFXModules[vfxData.Name]
+	local vfxModule = self.VFXModules[Name]
 	if vfxModule then
 		return vfxModule:Play(vfxData)
+	else
+		warn("attempt to play vfx that doesn't exist")
 	end
 end
 

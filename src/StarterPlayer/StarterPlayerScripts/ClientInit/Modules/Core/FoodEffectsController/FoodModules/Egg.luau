@@ -12,9 +12,10 @@ function Egg:Init(Core)
     self.VFXController = Core:Get("VFXController")
 end
 
-function Egg:OnHit(HitResult)
+function Egg:OnHit(VFXData, VFXController)
     local Wind = VFXFolder.ChickenWind:Clone()
     local ChickenTemplate = AssetsFolder.Chicken
+    local HitResult = VFXData.HitResult
     Wind.Parent = workspace.Debris
     
     local GroundPos = Functions.GetGroundPos(HitResult.Position)

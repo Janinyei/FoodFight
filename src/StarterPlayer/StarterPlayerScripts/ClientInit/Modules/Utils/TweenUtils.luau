@@ -1,10 +1,6 @@
 local TweenService = game:GetService("TweenService")
 local TweenUtils = {}
 
-function TweenUtils:Init()
-    
-end
-
 
 --Uses bouncy hovering for buttons with UI Scale objects
 TweenUtils.BouncyHoverWithUIScale = function(UIElement : GuiObject, UIScale : UIScale, Diff : number)

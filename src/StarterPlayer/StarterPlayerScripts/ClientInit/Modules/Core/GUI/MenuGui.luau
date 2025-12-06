@@ -12,13 +12,16 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 
 --imports--
+local PlayerScripts = LocalPlayer.PlayerScripts
+local ClientUtils = PlayerScripts.ClientInit.Modules.Utils
 local ItemIndex = require(ReplicatedStorage.Modules.Info.ItemIndex)
+local TweenUtils = require(ClientUtils.TweenUtils)
+
 
 function MenuGui:Init(Core)
 	self.MenuScreen = PlayerGui.Menu
 	self.ClientDataController = Core:Get("ClientDataController")
     self.ScreenGuiController = Core:Get("ScreenGuiController")
-	self.TweenUtils = Core:Get("TweenUtils")
     self.MouseController = Core:Get("MouseController")
 
 	--loads menu components--
@@ -51,7 +54,7 @@ function MenuGui:InitProgressionGui()
 
 		local ProgressPercent = ProgressionData.Exp / MaxExp
 		-- ProgressBar.Size = UDim2.fromScale(ProgressPercent, 1)
-		self.TweenUtils.TweenBar(ProgressBar, ProgressPercent, 0.5)
+		TweenUtils.TweenBar(ProgressBar, ProgressPercent, 0.5)
 	end)
 end
 
@@ -69,14 +72,14 @@ function MenuGui:InitCurrencyGui()
     for _, UIFrame in self.CurrencyGui:GetChildren() do
         if UIFrame:FindFirstChild("BuyMore") then
             local BuyMoreFrame = UIFrame.BuyMore
-            self.TweenUtils.GrowOnHover(
+            TweenUtils.GrowOnHover(
                 BuyMoreFrame,
                 BuyMoreFrame.UIScale,
                 0.1,
                 TweenInfo.new(0.35, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
             )
 
-            self.TweenUtils.ButtonClickTween(BuyMoreFrame.Button, BuyMoreFrame.UIScale, 0.05, function()
+            TweenUtils.ButtonClickTween(BuyMoreFrame.Button, BuyMoreFrame.UIScale, 0.05, function()
                 print("Buy more " .. UIFrame.Name .. " clicked")
                 --open store screen
                 self.ScreenGuiController:SetScreen("Store")
@@ -94,14 +97,14 @@ function MenuGui:InitBottomFrame()
 
 	for _, UIFrame in self.BottomFrame:GetChildren() do
 		if UIFrame:IsA("GuiObject") and UIFrame:FindFirstChild("UIScale") then
-			self.TweenUtils.GrowOnHover(
+			TweenUtils.GrowOnHover(
 				UIFrame,
 				UIFrame.UIScale,
 				0.1,
 				TweenInfo.new(1, Enum.EasingStyle.Elastic, Enum.EasingDirection.Out)
 			)
 
-			self.TweenUtils.ButtonClickTween(UIFrame.Button, UIFrame.UIScale, 0.05, function()
+			TweenUtils.ButtonClickTween(UIFrame.Button, UIFrame.UIScale, 0.05, function()
 				print(UIFrame.Name .. " clicked")
 				--button functionality goes here--
 				if UIFrame == PlayButton then

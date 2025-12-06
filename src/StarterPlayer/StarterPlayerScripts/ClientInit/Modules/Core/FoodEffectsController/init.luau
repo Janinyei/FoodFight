@@ -40,16 +40,22 @@ function FoodEffectsController:OnHit(vfxData)
 
     print("processing food vfx for: ".. vfxData.Name)
     local foodModule = FoodModules[vfxData.Name]
-    
-    if foodModule and foodModule.OnHit then
+
+    local AbilityActivated = false
+
+    if foodModule and foodModule.OnHit and AbilityActivated then
         -- Let the food module handle its own vfx hit logic
         foodModule:OnHit(vfxData, self.VFXController)
     else
         -- Fallback to generic food hit effect
         self.VFXController:PlayEffect("FoodSplat", {
-            Position = vfxData.Position,
+            Position = vfxData.HitResult.Position,
+            Normal = vfxData.HitResult.Normal,
+            Obj = vfxData.HitResult.Instance,
+            FoodName = vfxData.Name
         })
     end
+
     
     -- Replicate if needed
     self.VFXEvent:Fire(true, vfxData)
