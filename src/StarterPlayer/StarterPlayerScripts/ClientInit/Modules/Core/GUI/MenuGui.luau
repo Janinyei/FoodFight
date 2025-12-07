@@ -109,9 +109,7 @@ function MenuGui:InitBottomFrame()
 				print(UIFrame.Name .. " clicked")
 				--button functionality goes here--
 				if UIFrame == PlayButton then
-					self.ScreenGuiController:SetScreen("HUD")
-                    self.MouseController:Lock()
-					self.CharacterEvent:Fire(true,"RequestJoin")
+                    self.CharacterEvent:Fire("RequestJoin")
 				elseif UIFrame == StoreButton then
                     self.ScreenGuiController:SetScreen("Store")
 				elseif UIFrame == SettingsButton then
@@ -183,3 +181,4 @@ function MenuGui:InitInventoryGui()
 end
 
 return MenuGui
+
