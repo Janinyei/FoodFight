@@ -27,7 +27,6 @@ return {
             if Particle:IsA("ParticleEmitter") then
                 task.delay(Particle:GetAttribute("EmitDelay") or 0.001, function()
                     Particle:Emit(Particle:GetAttribute("EmitCount") or 10)
-                    print("emitting particle")
                 end)
             end
         end

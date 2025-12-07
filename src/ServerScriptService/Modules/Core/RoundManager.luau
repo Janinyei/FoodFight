@@ -36,7 +36,7 @@ function RoundManager:InitModes()
             end,
 
             OnTick = function(TimeRemaining : number)
-                self.TimerEvent:Fires(true, "Intermission:", TimeRemaining)
+                self.TimerEvent:Fires(true, "Intermission", TimeRemaining)
             end,
 
             OnComplete = function()
@@ -51,7 +51,7 @@ function RoundManager:InitModes()
             end,
 
             OnTick = function(TimeRemaining : number)
-              self.TimerEvent:Fires(true, "Intermission:", TimeRemaining)
+              self.TimerEvent:Fires(true, "Classic", TimeRemaining)
             end,
 
             OnComplete = function()

@@ -62,6 +62,7 @@ function TrajectoryBeam:Init(Core)
     landingPart.CanCollide = false
     landingPart.CanQuery = false
     landingPart.Parent = TrajectoryInstanceCache
+    landingPart.CastShadow = false
     
 
     loaded = true --prevents duplicate parts
