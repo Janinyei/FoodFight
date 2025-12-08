@@ -45,7 +45,7 @@ function TrajectoryBeam:Init(Core)
         Ball.CanTouch = false
         Ball.CanQuery = false -- makes sure there's no raycast interference
         Ball.Color = BALL_COLOR
-        
+        Ball.CastShadow = false
         Parts[i] = Ball
     end
 

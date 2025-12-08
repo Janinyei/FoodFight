@@ -11,6 +11,7 @@ local LOBBY_CFRAME = CFrame.new(0, 1000, 0) -- gonna be changed later
 function CharacterManager:Init(Core)
 	self.Core = Core
 	self.CharacterEvent = Core:Get("SharedRemotes"):GetEvent("CharacterEvent")
+	self.RoundManager = Core:Get("RoundManager")
 	self.ActivePlayers = {} -- (clicked Play)
 
 	Players.PlayerAdded:Connect(function(player)
@@ -50,7 +51,6 @@ function CharacterManager:OnCharacterAdded(player, character)
 end
 
 function CharacterManager:ReturnToLobby(player)
-	if not self.ActivePlayers[player] then return end
 	if not player.Character then return end
 	
 	local hrp = player.Character:FindFirstChild("HumanoidRootPart")
@@ -63,15 +63,17 @@ function CharacterManager:ReturnToLobby(player)
 end
 
 function CharacterManager:RequestJoin(player)
-	print(player.Name .. " request join")
-	if self.ActivePlayers[player] then return end
+	local RoundManager = self.RoundManager
+	print(RoundManager.CurrentMode.Name)
+
+	if RoundManager.CurrentMode.Name == "Intermission" then return end
+	if self.ActivePlayers[player] == true then return end
 	self.ActivePlayers[player] = true
-    
-	local RoundManager = self.Core:Get("RoundManager")
-	if RoundManager.CurrentMode == RoundManager.Modes.InGame then
-		local spawnCFrame = RoundManager:GetSpawnPoint()
-		self:SpawnInGame(player, spawnCFrame)
-	end
+
+	print("player is now active")
+	local spawnCFrame = RoundManager:GetSpawnPoint()
+	self:SpawnInGame(player, spawnCFrame)
+	
 end
 
 function CharacterManager:SpawnInGame(player, spawnCFrame)

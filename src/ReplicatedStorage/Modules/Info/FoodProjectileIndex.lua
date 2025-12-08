@@ -37,7 +37,7 @@ return {
         BaseDamage = 4,
         Cooldown = 0.2,
         SpecialDamage = 3, --chicken damage
-        MaxBounces = 0,
+        MaxBounces = 4,
     },
 
     Grapes = {

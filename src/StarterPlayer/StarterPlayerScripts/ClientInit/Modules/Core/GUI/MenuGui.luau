@@ -15,6 +15,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local PlayerScripts = LocalPlayer.PlayerScripts
 local ClientUtils = PlayerScripts.ClientInit.Modules.Utils
 local ItemIndex = require(ReplicatedStorage.Modules.Info.ItemIndex)
+local RarityIndex = require(ReplicatedStorage.Modules.Info.RarityIndex)
 local TweenUtils = require(ClientUtils.TweenUtils)
 
 
@@ -36,19 +37,20 @@ function MenuGui:Start() end
 
 --Progression Gui--
 function MenuGui:InitProgressionGui()
-	self.ProgressionGui = self.MenuScreen.Container.ProgressionFrame
+	self.ProgressionGui = self.MenuScreen.Container.ProgressionContainer
 
 	local ProgressionGui = self.ProgressionGui
-	local ProgressBarContainer = ProgressionGui.ProgressBarContainer
+	local ProgressBarContainer = ProgressionGui.Progression.ProgressBarContainer
 	local ProgressBar = ProgressBarContainer.ProgressBar
+	local PlayerName = self.ProgressionGui.PlayerName
 
 	self.ClientDataController.ProgressionChanged:Connect(function(ProgressionData)
 		local MaxExp = math.ceil((ProgressionData.Level / 2) * math.log10((ProgressionData.Level + 1) ^ 2) * 100 + 100) --just copied the formula
 		--level text
-		ProgressionGui.LevelNum.Text = tostring(ProgressionData.Level)
+		ProgressionGui.Progression.LevelNum.Text = tostring(ProgressionData.Level)
 
 		--rank text
-		ProgressionGui.Rank.Text = ProgressionData.Rank
+		ProgressionGui.Progression.Rank.Text = ProgressionData.Rank
 
 		--exp bar text and sizing
 		ProgressBarContainer.ExpAmount.Text = tostring(ProgressionData.Exp) .. " / " .. tostring(MaxExp)
@@ -106,10 +108,10 @@ function MenuGui:InitBottomFrame()
 			)
 
 			TweenUtils.ButtonClickTween(UIFrame.Button, UIFrame.UIScale, 0.05, function()
-				print(UIFrame.Name .. " clicked")
+			
 				--button functionality goes here--
 				if UIFrame == PlayButton then
-                    self.CharacterEvent:Fire("RequestJoin")
+                    self.CharacterEvent:Fire(true, "RequestJoin")
 				elseif UIFrame == StoreButton then
                     self.ScreenGuiController:SetScreen("Store")
 				elseif UIFrame == SettingsButton then
@@ -121,27 +123,27 @@ function MenuGui:InitBottomFrame()
 end
 
 function MenuGui:InitInventoryGui()
-	self.InventoryGui = self.MenuScreen.Container.InventoryFrame
+	self.InventoryGui = self.MenuScreen.Container.InventoryContainer
 	local InventoryGui = self.InventoryGui
 
-	local TabContainer = InventoryGui.TabContainer
+	local TabContainer = InventoryGui.Topbar
 	local PageContainer = InventoryGui.PageContainer
 	local UIPageLayout = PageContainer.UIPageLayout
 
 	--navigation logic--
 
 	for _, Button in TabContainer:GetChildren() do
-		if Button:IsA("TextButton") or Button:IsA("ImageButton") then
+		if Button:IsA("Frame") then
 			local TargetPage = PageContainer:FindFirstChild(Button.Name)
-			Button.MouseButton1Click:Connect(function()
+			Button.ImageButton.MouseButton1Click:Connect(function()
 				if TargetPage then
 					UIPageLayout:JumpTo(TargetPage)
-                    Button.BorderStroke.Color = Color3.fromRGB(255,255,255)
+                    Button.UIStroke.Color = Color3.fromRGB(255,255,255)
 
                     --change other buttons back
                     for _, OtherButton in TabContainer:GetChildren() do
-                        if (OtherButton:IsA("TextButton") or OtherButton:IsA("ImageButton")) and OtherButton ~= Button then
-                            OtherButton.BorderStroke.Color = Color3.fromRGB(50,50,50)
+                        if OtherButton:IsA("Frame") and OtherButton ~= Button then
+                            OtherButton.UIStroke.Color = Color3.fromRGB(50,50,50)
                         end
 					end
 				end
@@ -150,32 +152,62 @@ function MenuGui:InitInventoryGui()
 	end
 
 	--load items in inventory pages--
-	local InventoryItemTemplate = InventoryGui.PageContainer.Food.Burger--item template for all of the inventory
+	local InventoryItemTemplate = InventoryGui.PageContainer.Food.ItemFrame--item template for all of the inventory
 	local ItemTooltipUI = PlayerGui.Tooltip --tooltip UI
 	
 	--use one tooltip UI for every item
 	for _, Category in ItemIndex do
-		for _, ItemData in Category do
+		for ItemName, ItemData in Category do
 			local ItemFrame = InventoryItemTemplate:Clone()
 			ItemFrame.Parent = PageContainer[ItemData.Type]
+			--glow frame--
+			ItemFrame.StrokeGlow.ImageColor3 = RarityIndex[ItemData.Rarity].Color
+
+			--glow brighter on hover
+			TweenUtils.GrowOnHover(
+				ItemFrame,
+				ItemFrame.StrokeGlow.UIScale,
+				0.1,
+				TweenInfo.new(0.35, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+			)
 			--events--
 
+			ItemFrame.Button.MouseButton1Click:Connect(function()
+				print("Clicked item: " .. ItemData.Name)
+				--equip/use item logic goes here--
+
+				--check if they own it. If they do then equip it.
+
+				if self.ClientDataController.DataCache.Inventory[ItemData.Type][ItemData.Name] then
+					print("equip")
+				else
+					--make purchase dialogue gui visible
+					print("prompt purchase")
+					--will most likely need an outer variable such as "SelectedItem" so we only need to create one purchase dialogue
+
+				end
+	
+			end)
 			ItemFrame.MouseEnter:Connect(function()
 				--show tooltip
 				ItemTooltipUI.Enabled = true
-		
+				--load tooltip content
+				--tooltips need to show: name, rarity, special ability, description
+				print("item name:" .. ItemData.Name)
 			end)
 
 			ItemFrame.MouseLeave:Connect(function()
 				--hide tooltip
 				ItemTooltipUI.Enabled = false
-				--tween frame--
 			end)
 
 			ItemFrame.MouseMoved:Connect(function(x, y)
 				--move tooltip
 				ItemTooltipUI.Container.Position = UDim2.fromOffset(x,y)
 			end)
+
+
+			
 		end
 	end
 end

@@ -28,6 +28,7 @@ end
 function RoundManager:InitModes()
     self.Modes = {
         Intermission = {
+            Name = "Intermission",
             Start = function()
                 self.Timer:SetTime(INTERMISSION_TIME)
                 for _, player in ipairs(Players:GetPlayers()) do
@@ -36,7 +37,7 @@ function RoundManager:InitModes()
             end,
 
             OnTick = function(TimeRemaining : number)
-                self.TimerEvent:Fires(true, "Intermission", TimeRemaining)
+                self.TimerEvent:Fires(true, "Intermission:", TimeRemaining)
             end,
 
             OnComplete = function()
@@ -46,6 +47,7 @@ function RoundManager:InitModes()
         },
 
         InGame = {
+            Name = "InGame",
             Start = function()
                 self.Timer:SetTime(120)
             end,

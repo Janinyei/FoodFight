@@ -80,8 +80,6 @@ function ProjectileController:Start()
 
 	local function fireProj(actionName, inputState, inputObject)
 
-		print(inputObject)
-
 		if actionName ~= fireAction then
 			return
 		end

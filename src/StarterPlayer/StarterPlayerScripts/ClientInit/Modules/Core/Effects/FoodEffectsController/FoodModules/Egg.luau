@@ -17,7 +17,7 @@ function Egg:OnHit(VFXData)
     
     local EggSplash = EggVFXFolder.EggSplash:Clone()
     EggSplash.Position = VFXData.HitResult.Position
-    EggSplash.Parent = workspace
+    EggSplash.Parent = workspace.VisualEffectsCache
     Debris:AddItem(EggSplash, 5)
 
     Functions.Emit(EggSplash)
