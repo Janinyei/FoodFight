@@ -7,28 +7,28 @@ return {
     },
    Uncommon = {
         Color = Color3.fromRGB(44, 255, 54),
-        DisplayName = "Common"
+        DisplayName = "Uncommon"
 
     },
 
   
     Rare = {
          Color = Color3.fromRGB(72, 133, 255),
-         DisplayName = "Common"
+         DisplayName = "Rare"
     
      },
     
     
      Epic = {
           Color = Color3.fromRGB(207, 15, 255),
-          DisplayName = "Common"
+          DisplayName = "Epic"
      
       },
      
      
     Legendary = {
            Color = Color3.fromRGB(255, 198, 26),
-           DisplayName = "Common"
+           DisplayName = "Legendary"
        },
       
       

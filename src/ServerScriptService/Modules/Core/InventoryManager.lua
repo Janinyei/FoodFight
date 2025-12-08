@@ -13,11 +13,22 @@ function InventoryManager:Init(Core)
 	self.InventoryEvent = Core:Get("SharedRemotes"):GetEvent("InventoryEvent")
 	--Modules--
 	DataManager = Core:Get("DataManager")
+
 end
 
 function InventoryManager:Start()
 	DataManager.DataLoaded:Connect(function(Player: Player, Data)
 		self.InventoryEvent:Fire(true, Player, Data.Inventory)
+	end)
+
+
+	self.InventoryEvent:Connect(function(player, action, ItemType, ItemName)
+		if action ==  "EquipItem" then
+			local PlrData = DataManager:GetData(player)
+			PlrData.Inventory.Equipped[ItemType] = ItemName
+			-- replicate to client
+			self.InventoryEvent:Fire(true, player, PlrData.Inventory)
+		end
 	end)
 end
 

@@ -90,6 +90,7 @@ function ProjectileController:Start()
 				--firing
 				local Inventory = self.ClientDataController:GetInventory()
 				local EquippedFood = Inventory.Equipped.Food or nil
+				print(EquippedFood)
 				self:AttemptFire(EquippedFood)
 			elseif inputObject.UserInputType == Enum.UserInputType.MouseButton2 then
 				--aiming

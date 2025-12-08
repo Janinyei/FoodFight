@@ -25,6 +25,7 @@ function MenuGui:Init(Core)
     self.ScreenGuiController = Core:Get("ScreenGuiController")
     self.MouseController = Core:Get("MouseController")
     self.CharacterEvent = Core:Get("SharedRemotes"):GetEvent("CharacterEvent")
+	self.InventoryEvent = Core:Get("SharedRemotes"):GetEvent("InventoryEvent")
 
 	--loads menu components--
 	self:InitProgressionGui()
@@ -130,6 +131,8 @@ function MenuGui:InitInventoryGui()
 	local PageContainer = InventoryGui.PageContainer
 	local UIPageLayout = PageContainer.UIPageLayout
 
+
+
 	--navigation logic--
 
 	for _, Button in TabContainer:GetChildren() do
@@ -159,7 +162,15 @@ function MenuGui:InitInventoryGui()
 	for _, Category in ItemIndex do
 		for ItemName, ItemData in Category do
 			local ItemFrame = InventoryItemTemplate:Clone()
+			ItemFrame.Visible = true
+			ItemFrame.Name = ItemName
 			ItemFrame.Parent = PageContainer[ItemData.Type]
+			ItemFrame.LayoutOrder = ItemData.Order
+
+			--display item image
+			if ItemData.ImageId then
+			ItemFrame.MainContent.ItemImage.Image = ItemData.ImageId
+			end
 			--glow frame--
 			ItemFrame.StrokeGlow.ImageColor3 = RarityIndex[ItemData.Rarity].Color
 
@@ -177,16 +188,16 @@ function MenuGui:InitInventoryGui()
 				--equip/use item logic goes here--
 
 				--check if they own it. If they do then equip it.
-
-				if self.ClientDataController.DataCache.Inventory[ItemData.Type][ItemData.Name] then
+				print(self.ClientDataController.DataCache.Inventory)
+				if true then--[[self.ClientDataController.DataCache.Inventory[ItemData.Type][ItemName] then]]
 					print("equip")
+					--equip item logic
+					self.InventoryEvent:Invoke(20, "EquipItem", ItemData.Type, ItemName)
 				else
 					--make purchase dialogue gui visible
 					print("prompt purchase")
 					--will most likely need an outer variable such as "SelectedItem" so we only need to create one purchase dialogue
-
 				end
-	
 			end)
 			ItemFrame.MouseEnter:Connect(function()
 				--show tooltip

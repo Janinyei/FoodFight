@@ -15,7 +15,7 @@ return {
         Cooldown = 0.3,
     },
 
-    ChiliPepper = {
+    ["Chili Pepper"] = {
         BaseDamage = 4,
         Cooldown = 3,
         SpecialDamage = 2, --burn damage
@@ -42,7 +42,18 @@ return {
 
     Grapes = {
         BaseDamage = 5,
-        Cooldown = 3,
+        Cooldown = 1,
+    },
+
+    Banana = {
+        BaseDamage = 6,
+        Cooldown = 0.5,
+    },
+
+    ["Ice Cream"] = {
+        BaseDamage = 7,
+        Cooldown = 2,
+        SpecialDamage = 4, --freeze damage
     },
   
    

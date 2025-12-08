@@ -44,12 +44,13 @@ function ClientDataCacheController:Init(Core)
 
 	--instantiate connections
 	self.CurrencyEvent:Connect(function(CurrencyData: currencyType)
-		self.Currency = CurrencyData
+		self.DataCache.Currency = CurrencyData
 		self.CurrencyChanged:Fire(CurrencyData)
 	end)
 
 	self.InventoryEvent:Connect(function(Inventory: inventoryType)
-		self.Inventory = Inventory
+		print("inventory updated")
+		self.DataCache.Inventory = Inventory
 		self.InventoryChanged:Fire(Inventory)
 	end)
 
