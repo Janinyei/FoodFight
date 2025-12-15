@@ -13,6 +13,8 @@ function SharedRemotes:Init()
 		"TimerEvent",
 		"ProgressionEvent",
 		"VFXEvent",
+		"GameStatusEvent",
+		"CombatEvent",
 		"CharacterEvent"
 	}
 
@@ -26,6 +28,8 @@ function SharedRemotes:Init()
 	elseif RunService:IsClient() then
 		self.Events = Warp.fromClientArray(self.RemoteNames) --loads on client
 	end
+
+	print("shared remotes initiated")
 end
 
 function SharedRemotes:GetEvent(EventName: string)

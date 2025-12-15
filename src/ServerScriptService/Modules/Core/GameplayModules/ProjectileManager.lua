@@ -91,17 +91,8 @@ function ProjectileManager:HandleFireProjectile(player, data)
         Velocity = data.Velocity,
         Timestamp = tick(),
     })]]
-	
 
-	self.ProjectileEvent:Fires(true, "Fire", {
-		Id = data.Id,
-		Owner = player,
-		FoodName = data.FoodName,
-		Origin = data.Origin,
-		Direction = data.Direction,
-		Velocity = data.Velocity,
-		Timestamp = tick(),
-	})
+	
 end
 
 function ProjectileManager:ValidateFireRequest(player, data)
@@ -226,14 +217,7 @@ function ProjectileManager:HandleProjectileHit(player, data)
 		end
 	end
 
-	-- Notify all clients
-	for _, client in pairs(Players:GetPlayers()) do
-		self.ProjectileEvent:Fire(client, "Hit", {
-			ProjectileId = projectile.Id,
-			Destroyed = shouldDestroy,
-		})
-	end
-
+	
 	-- Remove if destroyed
 	if shouldDestroy then
 		self:RemoveProjectile(projectile.Id)

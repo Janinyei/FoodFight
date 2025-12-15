@@ -97,6 +97,7 @@ return {
         end)
     end,
 
+    
 
     FindCharacter = function(obj : Instance)
         if obj and obj:FindFirstAncestorWhichIsA("Model") then

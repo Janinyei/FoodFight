@@ -19,7 +19,6 @@ return {
         BaseDamage = 4,
         Cooldown = 3,
         SpecialDamage = 2, --burn damage
-        
     },
 
     Tomato = {
@@ -55,6 +54,11 @@ return {
         Cooldown = 2,
         SpecialDamage = 4, --freeze damage
     },
+
+    Donut = {
+        BaseDamage = 5,
+        Cooldown = 0.3,
+    }
   
    
 }

@@ -1,4 +1,5 @@
 --Purpose: To help simulate the client-sided projectile physics
+--note: this module doesn't actually have the physics in it. that would be the projectile class.
 --Note: most essential module to the gameplay. Be mindful of any changes
 --janin 10/22/25
 
@@ -7,7 +8,6 @@ local ProjectileController = {}
 --Services--
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
-local CAS = game:GetService("ContextActionService")
 local HttpService = game:GetService("HttpService")
 
 --Modules--
@@ -15,7 +15,7 @@ local Modules = ReplicatedStorage.Modules
 local Utils = Modules.Utils
 
 --Imports--
-local Projectile = require(script.Projectile)
+local Projectile = require(Utils.Projectile)
 local DamageHighlights = require(Utils.DamageHighlights)
 local Signal = require(Utils.Signal)
 --Data--
@@ -23,9 +23,6 @@ local FoodIndex = require(Modules.Info.FoodProjectileIndex)
 
 --Variables--
 local LocalPlayer = Players.LocalPlayer
-local Camera = workspace.CurrentCamera
-local Mouse = LocalPlayer:GetMouse()
-local FoodModels = ReplicatedStorage.Assets.FoodModels
 local LocalProjectiles = {}
 local ReplicatedProjectiles = {}
 
@@ -37,6 +34,7 @@ DebugInstanceFolder.Name = "DebugInstances"
 function ProjectileController:Init(Core)
 	self.RaycastParams = RaycastParams.new()
 	self.RaycastParams.FilterType = Enum.RaycastFilterType.Exclude
+	self.AlwaysExcludedInstances = { DebugInstanceFolder, workspace.VisualEffectsCache }
 	self.Blacklist = { DebugInstanceFolder, workspace.VisualEffectsCache }
 	self.RaycastParams.FilterDescendantsInstances = self.Blacklist
 	self.ProjectileCooldowns = {}
@@ -46,8 +44,6 @@ function ProjectileController:Init(Core)
 	self.ProjectileEvent = Core:Get("SharedRemotes"):GetEvent("ProjectileEvent")
 	self.ClientDataController = Core:Get("ClientDataController")
 	self.VFXController = Core:Get("VFXController")
-	self.FoodEffectsController = Core:Get("FoodEffectsController")
-	self.TrajectoryBeam = Core:Get("TrajectoryBeam")
 	self.CameraController = Core:Get("CameraController")
 	self.TrailsController = Core:Get("TrailsController")
 
@@ -75,53 +71,11 @@ function ProjectileController:Init(Core)
 end
 
 function ProjectileController:Start()
-	--whenever someone clicks, create and fire a projectile
-	local fireAction = "FireProjectile"
-
-	local function fireProj(actionName, inputState, inputObject)
-
-		if actionName ~= fireAction then
-			return
-		end
-
-		if inputState == Enum.UserInputState.Begin then
-			
-			if inputObject.UserInputType == Enum.UserInputType.MouseButton1 then
-				--firing
-				local Inventory = self.ClientDataController:GetInventory()
-				local EquippedFood = Inventory.Equipped.Food or nil
-				print(EquippedFood)
-				self:AttemptFire(EquippedFood)
-			elseif inputObject.UserInputType == Enum.UserInputType.MouseButton2 then
-				--aiming
-				--use trajectory beam to assist players in aiming
-				local Inventory = self.ClientDataController:GetInventory()
-				local EquippedFood = Inventory.Equipped.Food or nil
-				self:AttemptAim(EquippedFood)
-			end
-
-		elseif inputState == Enum.UserInputState.End then
-			if inputObject.UserInputType == Enum.UserInputType.MouseButton2 then
-				self.CameraController:StopAim()
-			end
-		end
-	end
-
-	CAS:BindAction(fireAction, fireProj, false, Enum.UserInputType.MouseButton1, Enum.UserInputType.MouseButton2)
-	--setup replication event here to receive visual effects and such
+	--setup replication event here to handle replicating projectiles
 	self:StartReplicationListener()
 end
 
---repetitive code very nice 😐 (will refactor in 10 years)
-function ProjectileController:AttemptAim(FoodName: string)
-	self.CameraController:AimZoom(FoodName, self.RaycastParams)
-end
-
-function ProjectileController:GenerateProjectileId()
-	return LocalPlayer.UserId .. "_" .. HttpService:GenerateGUID(false)
-end
-
-function ProjectileController:AttemptFire(FoodName: string)
+function ProjectileController:FireProjectile(Obj: Model | BasePart, ProjectileData)
 	--check character instances
 	if LocalPlayer.Character == nil then
 		return
@@ -134,92 +88,37 @@ function ProjectileController:AttemptFire(FoodName: string)
 
 	--check cooldowns
 	local currentTime = tick()
-	local foodData = FoodIndex[FoodName]
-	if not foodData then
-		warn("Food not found:", FoodName)
+	if not ProjectileData then
+		warn("cannot shoot projectile with no data")
 		return
 	end
-
-	local cooldown = foodData.Cooldown or 1
-	if self.ProjectileCooldowns[FoodName] and currentTime - self.ProjectileCooldowns[FoodName] < cooldown then
-		return
-	end
-
-	--self.TrajectoryBeam:Disable()
-	--define launch parameters
-	local Origin = HRP.Position + HRP.CFrame.LookVector * 5
-	local Direction = (Mouse.Hit.Position - Origin).Unit
-	local Speed = foodData.Speed or 150
-	local Velocity = Direction * Speed + Vector3.new(0,10,0)
-
-	-- Generate unique ID
-	local ProjectileId = self:GenerateProjectileId()
-
-	--create & fire projectile
-	local ProjectileData = {
-		Id = ProjectileId,
-		Origin = Origin,
-		Velocity = Velocity,
-		Owner = LocalPlayer,
-		Restitution = foodData.Restitution,
-		Acceleration = foodData.Gravity,
-		MaxBounces = foodData.MaxBounces,
-		MaxDistance = 1000,
-		RaycastParams = self.RaycastParams,
-		Lifetime = 30,
-		Update = foodData.Update,
-	}
-
-	-- Create food model
-	local FoodModel = FoodModels[FoodName]:Clone()
-	FoodModel.Parent = workspace
 
 	-- Add to blacklist
-	table.insert(self.Blacklist, FoodModel)
+	table.insert(self.Blacklist, Obj)
 	self.RaycastParams.FilterDescendantsInstances = self.Blacklist
 
 	-- Create projectile
 	local NewProj = Projectile.new(ProjectileData)
-	NewProj:LoadModel(FoodModel)
+	NewProj:LoadModel(Obj)
 
-	-- Store in local projectiles
-	LocalProjectiles[ProjectileId] = NewProj
+	-- Store in  projectiles
+
+	if NewProj.IsReplicated then
+		ReplicatedProjectiles[ProjectileData.Id] = NewProj
+	else
+		LocalProjectiles[ProjectileData.Id] = NewProj
+	end
 
 	-- Fire projectile
 	NewProj:Fire()
-	
+
 	self.TrailsController:LoadTrail(NewProj.Model)
-
-	NewProj.OnFire:Connect(function()
-		
-	end)
-
-	-- Send to server for replication
-	self.ProjectileEvent:Fire(true, "Fire", {
-		Id = ProjectileId,
-		Owner = LocalPlayer,
-		Origin = Origin,
-		Direction = Direction,
-		Velocity = Velocity,
-		FoodName = FoodName,
-		Timestamp = tick(),
-	})
-
 
 	-- Setup hit connection
 	NewProj.OnHit:Connect(function(hitResult)
 		-- Check if we hit a player
 		local hitInstance = hitResult.Instance
 		local humanoid = hitInstance.Parent:FindFirstChildOfClass("Humanoid")
-
-		self.FoodEffectsController:OnHit({
-			Name = FoodName,
-			HitResult = { --have to create a table instead of just passing in regular raycastresult objects because roblox doesn't replicate RaycastResults fsr
-				Instance = hitResult.Instance,
-				Position = hitResult.Position,
-				Normal = hitResult.Normal,
-			},
-		})
 
 		--Check if the projectile hits a player or not
 		if humanoid and hitInstance.Parent ~= LocalPlayer.Character then
@@ -236,41 +135,59 @@ function ProjectileController:AttemptFire(FoodName: string)
 			end
 
 			-- Send hit validation to server
-			self.ProjectileEvent:Fire(true, "Hit", {
-				ProjectileId = ProjectileId,
-				HitPlayer = hitPlayer,
-				HitPosition = hitResult.Position,
-				HitPart = hitInstance.Name,
-				Velocity = NewProj.Velocity,
-				Timestamp = tick(),
-			})
+			--[[self.ProjectileEvent:Fire(true, "Hit", {
+							ProjectileId = ProjectileId,
+							HitPlayer = hitPlayer,
+							HitPosition = hitResult.Position,
+							HitPart = hitInstance.Name,
+							Velocity = NewProj.Velocity,
+							Timestamp = tick(),
+						})]]
 		else
 			-- Hit environment
-			self.ProjectileEvent:Fire(true, "Hit", {
-				ProjectileId = ProjectileId,
-				HitPosition = hitResult.Position,
-				HitNormal = hitResult.Normal,
-				Velocity = NewProj.Velocity,
-				Timestamp = tick(),
-			})
+
+			--[[self.ProjectileEvent:Fire(true, "Hit", {
+							ProjectileId = ProjectileId,
+							HitPosition = hitResult.Position,
+							HitNormal = hitResult.Normal,
+							Velocity = NewProj.Velocity,
+							Timestamp = tick(),
+						})]]
 		end
 	end)
 
 	-- Setup cleanup
 	NewProj.OnDestroyed:Connect(function()
-		LocalProjectiles[ProjectileId] = nil
-		-- Remove from blacklist
-		for i, v in ipairs(self.Blacklist) do
-			if v == FoodModel then
-				table.remove(self.Blacklist, i)
-				break
-			end
-		end
-		self.RaycastParams.FilterDescendantsInstances = self.Blacklist
+print("destroyed :(")
+		--LocalProjectiles[ProjectileId] = nil
+
+		--check both local and replicated projectiles to destroy just in case
 	end)
-	-- Set cooldown
-	self.ProjectileCooldowns[FoodName] = currentTime
+
+	NewProj.Update = function()
+		if LocalProjectiles[NewProj.Id] then
+			--print(NewProj.Velocity)
+		end
+	end
+
+	return NewProj
 end
+
+function ProjectileController:GenerateProjectileId(owner: Player)
+	-- Generate unique ID
+	return owner.UserId .. "_" .. HttpService:GenerateGUID(false)
+end
+
+function ProjectileController:GetProjectile(Id)
+	if ReplicatedProjectiles[Id] then
+		print("found in replicated projectiles")
+		return ReplicatedProjectiles[Id]
+	elseif LocalProjectiles[Id] then
+		return LocalProjectiles[Id]
+	end
+end
+
+
 
 function ProjectileController:StartReplicationListener()
 	self.ProjectileEvent:Connect(function(action, ProjData)

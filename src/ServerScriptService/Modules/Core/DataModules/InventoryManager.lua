@@ -26,6 +26,10 @@ function InventoryManager:Start()
 		if action ==  "EquipItem" then
 			local PlrData = DataManager:GetData(player)
 			PlrData.Inventory.Equipped[ItemType] = ItemName
+
+			if ItemType == "Food" then
+				--weld food model to arm
+			end
 			-- replicate to client
 			self.InventoryEvent:Fire(true, player, PlrData.Inventory)
 		end

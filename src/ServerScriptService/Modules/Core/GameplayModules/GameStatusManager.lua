@@ -1,39 +1,37 @@
---CharacterManager
+--GameStatusManager
 --Manages character spawning
 --Tzu 12/06/25
 
-local CharacterManager = {}
+local GameStatusManager = {}
 local Players = game:GetService("Players")
 
 -- Constants
 local LOBBY_CFRAME = CFrame.new(0, 1000, 0) -- gonna be changed later
 
-function CharacterManager:Init(Core)
+function GameStatusManager:Init(Core)
 	self.Core = Core
-	self.CharacterEvent = Core:Get("SharedRemotes"):GetEvent("CharacterEvent")
-	self.RoundManager = Core:Get("RoundManager")
+	self.GameStatusEvent = Core:Get("SharedRemotes"):GetEvent("GameStatusEvent")
+	self.GameManager = Core:Get("GameManager")
 	self.ActivePlayers = {} -- (clicked Play)
 
 	Players.PlayerAdded:Connect(function(player)
-		self.ActivePlayers[player] = false
-		
 		player.CharacterAdded:Connect(function(character)
 			self:OnCharacterAdded(player, character)
 		end)
 	end)
 
 	Players.PlayerRemoving:Connect(function(player)
-		self.ActivePlayers[player] = nil
+		table.remove(self.ActivePlayers, table.find(self.ActivePlayers, player))
 	end)
 	
-	self.CharacterEvent:Connect(function(player, action)
+	self.GameStatusEvent:Connect(function(player, action)
 		if action == "RequestJoin" then
 			self:RequestJoin(player)
 		end
 	end)
 end
 
-function CharacterManager:Start()
+function GameStatusManager:Start()
 	for _, player in ipairs(Players:GetPlayers()) do
 		if player.Character then
 			self:OnCharacterAdded(player, player.Character)
@@ -41,16 +39,16 @@ function CharacterManager:Start()
 	end
 end
 
-function CharacterManager:OnCharacterAdded(player, character)
+function GameStatusManager:OnCharacterAdded(player, character)
 	local humanoid = character:WaitForChild("Humanoid", 10)
 	if humanoid then
 		humanoid.Died:Once(function()
-			self.ActivePlayers[player] = false
+		table.remove(self.ActivePlayers, table.find(self.ActivePlayers, player))
 		end)
 	end
 end
 
-function CharacterManager:ReturnToLobby(player)
+function GameStatusManager:ReturnToLobby(player)
 	if not player.Character then return end
 	
 	local hrp = player.Character:FindFirstChild("HumanoidRootPart")
@@ -58,25 +56,25 @@ function CharacterManager:ReturnToLobby(player)
 	
 	hrp.CFrame = workspace.Spawn.SpawnLocation.CFrame
 	hrp.Anchored = true
-	self.CharacterEvent:Fire(player, "SetState", {State = "Lobby", Position = LOBBY_CFRAME.Position})
-	self.ActivePlayers[player] = false
+	self.GameStatusEvent:Fire(true, player, "SetState", {State = "Lobby", Position = LOBBY_CFRAME.Position})
+table.remove(self.ActivePlayers, table.find(self.ActivePlayers, player))
 end
 
-function CharacterManager:RequestJoin(player)
-	local RoundManager = self.RoundManager
-	print(RoundManager.CurrentMode.Name)
+function GameStatusManager:RequestJoin(player)
+	local GameManager = self.GameManager
+	print(GameManager.CurrentMode.Name)
 
-	if RoundManager.CurrentMode.Name == "Intermission" then return end
-	if self.ActivePlayers[player] == true then return end
-	self.ActivePlayers[player] = true
+	if GameManager.CurrentMode.Name == "Intermission" then return end 
+	if table.find(self.ActivePlayers, player) ~= nil then return end --no point if they're already active
+
+	table.insert(self.ActivePlayers, player)
 
 	print("player is now active")
-	local spawnCFrame = RoundManager:GetSpawnPoint()
+	local spawnCFrame = GameManager:GetSpawnPoint()
 	self:SpawnInGame(player, spawnCFrame)
-	
 end
 
-function CharacterManager:SpawnInGame(player, spawnCFrame)
+function GameStatusManager:SpawnInGame(player, spawnCFrame)
 	local character = player.Character
 	if not character then return end
 	
@@ -85,7 +83,7 @@ function CharacterManager:SpawnInGame(player, spawnCFrame)
 		hrp.Anchored = false
 		hrp.CFrame = spawnCFrame
 	end
-	self.CharacterEvent:Fire(player, "SetState", {State = "Game"})
+	self.GameStatusEvent:Fire(true, player, "SetState", {State = "Game"})
 end
 
-return CharacterManager
+return GameStatusManager

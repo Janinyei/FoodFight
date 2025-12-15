@@ -16,6 +16,7 @@ local Utils = Modules.Utils
 
 local AnimNation = require(Utils.AnimNation)
 local Functions = require(Utils.Functions)
+local Signal = require(Utils.Signal)
 
 --Variables--
 local Assets = ReplicatedStorage.Assets
@@ -34,6 +35,11 @@ local COMBAT_FEEDBACK_LIFETIME = 3
 function CombatGui:Init(Core)
 	self.ProjectileController = Core:Get("ProjectileController")
 	self.HUD = PlayerGui.HUD
+	self.FoodCombatController = Core:Get("FoodCombatController")
+
+
+	
+	
 end
 
 function CombatGui:Start()
@@ -49,6 +55,29 @@ function CombatGui:Start()
 			self:FeedbackMessage(TargetPlayer, "Elimination!", 100)
 		end
 	end)
+
+
+	--Signals--
+	
+		self.DamageDealt = self.FoodCombatController.DamageDealt
+		self.DamageReceived = self.FoodCombatController.DamageReceived
+		self.PlayerEliminated = nil --maybe lol
+
+	self.DamageDealt:Connect(function(data)
+		print(data)
+
+		self:ShowDamageIndicator(data.TargetCharacter, data.Amount)
+		self:ShowHitmarker(0.35)
+
+		if data.TargetPlayer then
+		self:FeedbackMessage(data.TargetPlayer, "Elimination!", 100)
+		end
+	end)
+
+	self.DamageReceived:Connect(function(data)
+		print(data)
+	end)
+	
 end
 
 --gets combat billboard
@@ -161,6 +190,8 @@ function CombatGui:ShowDamageIndicator(TargetCharacter, Damage, Color)
 		})
 	end
 end
+
+
 
 --displays hitmarker temporarily
 function CombatGui:ShowHitmarker(Duration: number)

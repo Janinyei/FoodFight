@@ -86,7 +86,7 @@ RunService.Heartbeat:Connect(function(deltaTime)
 			
 			-- Handle bouncing
 			if proj.BounceCount < proj.MaxBounces then
-				
+				print(proj.BounceCount)
 				proj:Bounce(hitResult.Normal)
 				proj.BounceCount += 1
 			else
@@ -116,7 +116,7 @@ function Projectile.new(data: ProjectileData)
 	self.Lifetime = data.Lifetime or 20
 	self.IsReplicated = data.IsReplicated or false
 
-	self.MaxHits = 1
+	self.MaxHits = 999 --determines how many times a hit can register on an attacked character
 	self.CurrentHits = 0
 	
 	-- Physical properties
@@ -166,6 +166,7 @@ function Projectile:LoadModel(Model: Model | BasePart)
 		self.Model = Model
 		self.Model.Parent = ProjectileFolder
 		
+
 	elseif Model:IsA("BasePart") then
 		-- Handle single part
 		Model.Anchored = true
@@ -202,6 +203,7 @@ function Projectile:UpdatePhysics(deltaTime: number)
 	
 	-- Update visual model with position and rotation
 	if self.Model then
+		
 		local GoalCFrame = CFrame.new(self.Position) * self.Rotation
 		
 		if self.Model:IsA("Model") then
@@ -217,7 +219,9 @@ end
 function Projectile:Fire()
 	self.Active = true
 	self.StartTime = tick()
-	ActiveProjectiles[self.Id] = self
+	--ActiveProjectiles[self.Id] = self --uncomment this when done testing replication
+
+	table.insert(ActiveProjectiles, self)
 
 	self.OnFire:Fire(self)
 end
@@ -246,7 +250,7 @@ function Projectile:Bounce(hitNormal: Vector3)
 	-- Apply restitution (energy loss)
 	self.Velocity = self.Velocity * self.Restitution
 	
-	-- Add some spin variation on bounce (optional - makes it more realistic)
+	-- Add some spin variation on bounce 
 	self.AngularVelocity = self.AngularVelocity + Vector3.new(
 		math.random(-5, 5),
 		math.random(-5, 5),
@@ -257,7 +261,8 @@ function Projectile:Bounce(hitNormal: Vector3)
 	self.AngularVelocity = self.AngularVelocity * 0.9
 
 	if self.Velocity.Magnitude < 0.2 then 
-		self:Destroy()
+		print("stopping cuz too slow")
+		self:Stop()
 	end
 end
 
@@ -283,12 +288,16 @@ function Projectile:Destroy()
 	end
 	
 	-- Remove from active projectiles
-	ActiveProjectiles[self.Id] = nil
+	--ActiveProjectiles[self.Id] = nil
+
+	table.remove(ActiveProjectiles, table.find(ActiveProjectiles, self))
 	
 	-- Clean up signals
 	self.OnHit:Destroy()
 	self.OnDestroyed:Destroy()
 	self.OnFire:Destroy()
+
+	
 end
 
 return Projectile

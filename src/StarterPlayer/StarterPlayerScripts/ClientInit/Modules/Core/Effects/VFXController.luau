@@ -9,6 +9,12 @@ function VFXController:Init(Core)
 	self.ActiveEffects = {}
 end
 
+function VFXController:Start()
+	for _, effectModule in game.ReplicatedStorage.Modules.Effects:GetChildren() do
+		self:RegisterEffect(effectModule.Name, require(effectModule))
+	end
+end
+
 function VFXController:PlayEffect(Name, vfxData) -- all roads lead to OOP 💔
 	-- Generic VFX playing logic
 	local vfxModule = self.VFXModules[Name]

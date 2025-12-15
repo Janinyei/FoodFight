@@ -145,7 +145,6 @@ function TrajectoryBeam:Enable(getTrajectoryData)
     
     updateConnection = RunService.Heartbeat:Connect(function()
         local Data = getTrajectoryData() --updates info every frame and stuff
-
         if Data then
             TrajectoryBeam:UpdateBeam(Data.Origin, Data.Velocity, Data.Gravity or Vector3.new(0,-50,0), Data.RaycastParams)
         end

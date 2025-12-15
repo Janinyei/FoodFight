@@ -73,8 +73,21 @@ function MouseController:Init()
 end
 
 function MouseController:Start()
-	print(CameraModule)
+	local MouseLocked = false
+	
 	self:Unlock()
+
+	UIS.InputBegan:Connect(function(inputObj, gpe)
+		if inputObj.KeyCode == Enum.KeyCode.P then
+			if MouseLocked then
+			self:Lock()
+			MouseLocked = true
+			else 
+				self:Unlock()
+				MouseLocked = false
+			end
+		end
+	end)
    
 end
 

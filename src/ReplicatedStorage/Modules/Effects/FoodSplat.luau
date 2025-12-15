@@ -20,7 +20,6 @@ local Modules = ReplicatedStorage.Modules
 local Functions = require(Modules.Utils.Functions)
 
 function FoodSplat:Play(data)
-    print(data)
 
    if Functions.FindCharacter(data.Obj) then return end --doesn't splat on characters
 

@@ -2,18 +2,20 @@
 -- Manages clientsided character states (Lobby/Game)
 -- Tzu 12/06/25
 
-local CharacterController = {}
+--note: rename to GameStatusController -librium 12/12/25
 
-function CharacterController:Init(Core)
+local GameStatusController = {}
+
+function GameStatusController:Init(Core)
 	self.Core = Core
-	self.CharacterEvent = Core:Get("SharedRemotes"):GetEvent("CharacterEvent")
+	self.GameStatusEvent = Core:Get("SharedRemotes"):GetEvent("GameStatusEvent")
 	self.CameraController = Core:Get("CameraController")
 	self.ScreenGuiController = Core:Get("ScreenGuiController")
 	self.MouseController = Core:Get("MouseController")
 end
 
-function CharacterController:Start()
-	self.CharacterEvent:Connect(function(action, data)
+function GameStatusController:Start()
+	self.GameStatusEvent:Connect(function(action, data)
 		if action == "SetState" then
 			if data.State == "Lobby" then
 				self:SetLobbyState(data.Position)
@@ -24,16 +26,17 @@ function CharacterController:Start()
 	end)
 end
 
-function CharacterController:SetLobbyState(position)
+function GameStatusController:SetLobbyState(position)
 	self.CameraController:SetSpectate(true, position)
 	self.ScreenGuiController:SetScreen("Menu")
 	self.MouseController:Unlock()
 end
 
-function CharacterController:SetGameState()
+function GameStatusController:SetGameState()
 	self.CameraController:SetSpectate(false)
+	print("setting the screen to HUD")
 	self.ScreenGuiController:SetScreen("HUD")
 	self.MouseController:Lock()
 end
 
-return CharacterController
+return GameStatusController

@@ -67,8 +67,9 @@ function ClientDataCacheController:Start()
 	--Fire off events once to load GUI
 	self.CurrencyChanged:Fire(self.DataCache.Currency)
 	self.ProgressionChanged:Fire(self.DataCache.Progression)
-	
 
+	self.InventoryChanged:Fire(self.DataCache.Inventory)
+	--issue: this may still not work with some scripts if connections aren't created in time.
 end
 
 -- Wrappers
