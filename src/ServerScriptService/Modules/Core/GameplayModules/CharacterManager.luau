@@ -1,29 +1,71 @@
 --Purpose: Manages status effects to the character, and pretty much anything else that the server may need to handle the character on the server with
 --note: very useful when a lot is going on in the game
 
-
 local CharacterManager = {}
+local Players = game.Players
 
 
-function CharacterManager:ApplyStatusEffect()
-    self.StatusEffects = {"Frozen", } 
+
+function CharacterManager:Init()
+
+	Players.PlayerAdded:Connect(function(player)
+		player.CharacterAdded:Connect(function(char)
+			--setup ragdoll constraints--
+			local hum = char:WaitForChild("Humanoid")
+            hum.BreakJointsOnDeath = false
+            self:_setupRagdollConstraints(char)
+
+            hum.Died:Connect(function()
+                self:EnableRagdoll(char)
+                
+                hum.RootPart:ApplyImpulse(hum.RootPart:GetMass() * Vector3.yAxis * 500)
+                hum.RootPart:ApplyAngularImpulse(hum.RootPart:GetMass() * Vector3.one * math.random(100, 500))
+            end)
+		end)
+	end)
+end
 
 
-    --[[
+function CharacterManager:EnableRagdoll(char) 
+	print("now ragdolling")
+	for _, v in pairs(char:GetDescendants()) do  
+		if v:IsA("Motor6D") then
+			v.Enabled = false
+		elseif v:IsA("BallSocketConstraint") then
+			v.Enabled =  true
+		end
+	end
+end
 
-    [PlayerInstance] = {"Frozen", "Burning", ""}
+
+
+function CharacterManager:_setupRagdollConstraints(char)
     
-    ]]
-end
+	for _, v in pairs(char:GetDescendants()) do  --ragdoll
+		if v:IsA("Motor6D") then
+			local a0, a1 = Instance.new("Attachment"), Instance.new("Attachment")
+			a0.CFrame = v.C0
+			a1.CFrame = v.C1
+			a0.Parent = v.Part0
+			a1.Parent = v.Part1
+			local b = Instance.new("BallSocketConstraint")
+			b.Attachment0 = a0
+			b.Attachment1 = a1
+			b.Parent = v.Part0
+            b.Enabled =  false
+		    v.Enabled = true
+		end
+	end
+ end
 
 
-function CharacterManager:CheckStatusEffect(player, StatusName : string)
-    
-end
 
+ function CharacterManager:ApplyStatusEffect()
+     
+ end
 
-function CharacterManager:RemoveStatusEffect(player, StatusName : string, RemoveAll : boolean?)
-
-end
-
+ 
+ function CharacterManager:CheckStatusEffect(player, StatusName: string) end
+ 
+ function CharacterManager:RemoveStatusEffect(player, StatusName: string, RemoveAll: boolean?) end
 return CharacterManager

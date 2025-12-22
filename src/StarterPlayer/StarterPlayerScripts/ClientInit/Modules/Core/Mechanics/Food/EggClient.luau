@@ -71,7 +71,13 @@ function EggClient:Fire()
 	self:ShootEgg()
 end
 
-function EggClient:ShootEgg(Spread: boolean?, isUlt : boolean)
+
+--different form Fire, OnFire consists of additional functionality. If you want to overwrite the fire function, then use Fire instead in the client module
+function EggClient:OnFire(data)
+	--use for vfx possibily
+end
+
+function EggClient:ShootEgg(Spread: boolean?)
 	local ProjectileConfig = self.Config.Projectile
 	local Velo = (Mouse.Hit.Position - LocalPlayer.Character.HumanoidRootPart.Position).Unit * ProjectileConfig.Speed
 		+ ProjectileConfig.InitUpwardVelocity
@@ -108,8 +114,8 @@ function EggClient:ShootEgg(Spread: boolean?, isUlt : boolean)
 
 	--Fire to server--
 	self.CombatEvent:Fire(true, "Fire", {
+		Sender = LocalPlayer,
 		Combat = {
-			Sender = LocalPlayer,
 			FoodName = "Egg",
 			
 		},
@@ -166,8 +172,8 @@ function EggClient:OnHit(data)
 	--fire to the server for replication--
 
 	self.CombatEvent:Fire(true, "Hit", {
+		Sender = LocalPlayer,
 		Combat = {
-			Sender = LocalPlayer,
 			FoodName = "Egg",
 			Ultimate = self.FoodCombatController.UltimateActivated
 		},
@@ -189,7 +195,7 @@ end
 
 
 
-function EggClient:OnFireReplicated(data)
+function EggClient:FireReplicated(data)
 	local ProjectileConfig = self.Config.Projectile
 
 	local DebugPart = Instance.new("Part")
@@ -211,15 +217,12 @@ function EggClient:OnFireReplicated(data)
 	-temporarily add plr to blacklist(bad because projectiles that are actually supposed to hit wouldn't detect so don't do this lol)
 	
 	]]
-	local RayParams = RaycastParams.new()
-	RayParams.FilterDescendantsInstances = { self.ProjectileController.AlwaysExcludedInstances, data.Combat.Sender.Character }
-	RayParams.FilterType = Enum.RaycastFilterType.Exclude
-
+	
 	local RepProj = self.ProjectileController:FireProjectile(DebugPart, {
-		Owner = data.Combat.Sender,
+		Owner = data.Sender,
 		Id = data.Projectile.Id,
-		RaycastParams = RayParams,
-		Origin = data.Combat.Sender.Character.HumanoidRootPart.Position,
+		
+		Origin = data.Sender.Character.HumanoidRootPart.Position,
 		Velocity = data.Projectile.Velocity,
 		Acceleration = ProjectileConfig.Acceleration,
 		MaxBounces = ProjectileConfig.MaxBounces,

@@ -11,7 +11,7 @@ function GameStatusController:Init(Core)
 	self.GameStatusEvent = Core:Get("SharedRemotes"):GetEvent("GameStatusEvent")
 	self.CameraController = Core:Get("CameraController")
 	self.ScreenGuiController = Core:Get("ScreenGuiController")
-	self.MouseController = Core:Get("MouseController")
+	--self.MouseController = Core:Get("MouseController")
 end
 
 function GameStatusController:Start()
@@ -29,14 +29,14 @@ end
 function GameStatusController:SetLobbyState(position)
 	self.CameraController:SetSpectate(true, position)
 	self.ScreenGuiController:SetScreen("Menu")
-	self.MouseController:Unlock()
+	--self.MouseController:Unlock()
 end
 
 function GameStatusController:SetGameState()
 	self.CameraController:SetSpectate(false)
 	print("setting the screen to HUD")
 	self.ScreenGuiController:SetScreen("HUD")
-	self.MouseController:Lock()
+--	self.MouseController:Lock()
 end
 
 return GameStatusController

@@ -19,7 +19,6 @@ local Projectile = require(Utils.Projectile)
 local DamageHighlights = require(Utils.DamageHighlights)
 local Signal = require(Utils.Signal)
 --Data--
-local FoodIndex = require(Modules.Info.FoodProjectileIndex)
 
 --Variables--
 local LocalPlayer = Players.LocalPlayer
@@ -37,18 +36,12 @@ function ProjectileController:Init(Core)
 	self.AlwaysExcludedInstances = { DebugInstanceFolder, workspace.VisualEffectsCache }
 	self.Blacklist = { DebugInstanceFolder, workspace.VisualEffectsCache }
 	self.RaycastParams.FilterDescendantsInstances = self.Blacklist
-	self.ProjectileCooldowns = {}
 
 	--Core modules/events
 	self.Core = Core
 	self.ProjectileEvent = Core:Get("SharedRemotes"):GetEvent("ProjectileEvent")
-	self.ClientDataController = Core:Get("ClientDataController")
-	self.VFXController = Core:Get("VFXController")
-	self.CameraController = Core:Get("CameraController")
 	self.TrailsController = Core:Get("TrailsController")
 
-	--Signals
-	self.OnDamaged = Signal.new()
 	-- Add local character to blacklist if it exists
 	if LocalPlayer.Character then
 		table.insert(self.Blacklist, LocalPlayer.Character)
@@ -58,12 +51,6 @@ function ProjectileController:Init(Core)
 	-- Update blacklist when character spawns
 	LocalPlayer.CharacterAdded:Connect(function(character)
 		-- Remove old character from blacklist
-		for i, v in ipairs(self.Blacklist) do
-			if typeof(v) == "Instance" and v:IsDescendantOf(Players) then
-				table.remove(self.Blacklist, i)
-				break
-			end
-		end
 		-- Add new character
 		table.insert(self.Blacklist, character)
 		self.RaycastParams.FilterDescendantsInstances = self.Blacklist
@@ -72,22 +59,13 @@ end
 
 function ProjectileController:Start()
 	--setup replication event here to handle replicating projectiles
-	self:StartReplicationListener()
+	--self:StartReplicationListener()
 end
 
+--I might refactor this to  CreateProjectile instead
+--then I can fire the projectile from the foodcombat controller
 function ProjectileController:FireProjectile(Obj: Model | BasePart, ProjectileData)
-	--check character instances
-	if LocalPlayer.Character == nil then
-		return
-	end
 
-	local HRP = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-	if not HRP then
-		return
-	end
-
-	--check cooldowns
-	local currentTime = tick()
 	if not ProjectileData then
 		warn("cannot shoot projectile with no data")
 		return
@@ -103,10 +81,18 @@ function ProjectileController:FireProjectile(Obj: Model | BasePart, ProjectileDa
 
 	-- Store in  projectiles
 
-	if NewProj.IsReplicated then
+	print(ProjectileData)
+	if NewProj.Owner ~= LocalPlayer then --replicated projectile
 		ReplicatedProjectiles[ProjectileData.Id] = NewProj
+		--sets up different raycast params to avoid conflicts
+		local RayParams = RaycastParams.new()
+		RayParams.FilterDescendantsInstances =
+			{ self.AlwaysExcludedInstances, NewProj.Owner.Character}
+		RayParams.FilterType = Enum.RaycastFilterType.Exclude
+		NewProj.RaycastParams = RayParams
 	else
-		LocalProjectiles[ProjectileData.Id] = NewProj
+		
+		LocalProjectiles[NewProj.Id] = NewProj
 	end
 
 	-- Fire projectile
@@ -114,64 +100,9 @@ function ProjectileController:FireProjectile(Obj: Model | BasePart, ProjectileDa
 
 	self.TrailsController:LoadTrail(NewProj.Model)
 
-	-- Setup hit connection
-	NewProj.OnHit:Connect(function(hitResult)
-		-- Check if we hit a player
-		local hitInstance = hitResult.Instance
-		local humanoid = hitInstance.Parent:FindFirstChildOfClass("Humanoid")
-
-		--Check if the projectile hits a player or not
-		if humanoid and hitInstance.Parent ~= LocalPlayer.Character then
-			local hitCharacter = hitInstance.Parent
-			local hitPlayer = Players:GetPlayerFromCharacter(hitCharacter)
-
-			if not hitPlayer and hitCharacter:IsA("Model") then
-				hitPlayer = hitCharacter
-			end
-
-			--highlights player that was hit
-			if hitCharacter and hitCharacter:IsA("Model") then
-				DamageHighlights:HighlightModel(hitCharacter)
-			end
-
-			-- Send hit validation to server
-			--[[self.ProjectileEvent:Fire(true, "Hit", {
-							ProjectileId = ProjectileId,
-							HitPlayer = hitPlayer,
-							HitPosition = hitResult.Position,
-							HitPart = hitInstance.Name,
-							Velocity = NewProj.Velocity,
-							Timestamp = tick(),
-						})]]
-		else
-			-- Hit environment
-
-			--[[self.ProjectileEvent:Fire(true, "Hit", {
-							ProjectileId = ProjectileId,
-							HitPosition = hitResult.Position,
-							HitNormal = hitResult.Normal,
-							Velocity = NewProj.Velocity,
-							Timestamp = tick(),
-						})]]
-		end
-	end)
-
-	-- Setup cleanup
-	NewProj.OnDestroyed:Connect(function()
-print("destroyed :(")
-		--LocalProjectiles[ProjectileId] = nil
-
-		--check both local and replicated projectiles to destroy just in case
-	end)
-
-	NewProj.Update = function()
-		if LocalProjectiles[NewProj.Id] then
-			--print(NewProj.Velocity)
-		end
-	end
-
 	return NewProj
 end
+
 
 function ProjectileController:GenerateProjectileId(owner: Player)
 	-- Generate unique ID
@@ -187,9 +118,7 @@ function ProjectileController:GetProjectile(Id)
 	end
 end
 
-
-
-function ProjectileController:StartReplicationListener()
+--[[function ProjectileController:StartReplicationListener()
 	self.ProjectileEvent:Connect(function(action, ProjData)
 		print(action, ProjData)
 		if action == "Fire" then
@@ -345,6 +274,8 @@ function ProjectileController:StartReplicationListener()
 			end
 		end
 	end)
-end
+end]]
+--this is obsolete now
+
 
 return ProjectileController

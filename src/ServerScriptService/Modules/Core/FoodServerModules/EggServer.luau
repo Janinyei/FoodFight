@@ -137,9 +137,8 @@ function EggServer:OnHit(player, data)
 
 			--send event to client for disappear vfx
 			self.CombatEvent:Fires(true, "ChickenCleanup", {
-				
+					Sender = player,
 					Combat = {
-						Sender = player,
 						FoodName = "Egg"
 					},
 					Position = ChickenNPC.HumanoidRootPart.Position

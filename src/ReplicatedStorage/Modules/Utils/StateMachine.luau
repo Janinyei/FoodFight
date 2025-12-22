@@ -1,17 +1,18 @@
 --librium 
 --7/15/25
 
-local Signal
+--simple state machine module
+
+
+local Signal = require(script.Parent.Signal)
 local StateMachine = {}
+
 StateMachine.__index = StateMachine
-
-StateMachine.Machines = {}
-
+--StateMachine.Machines = {} --low-key don't need this
 
 
-function StateMachine.Start()
-	Signal = require(script.Parent.Signal)
-end
+
+
 
 function StateMachine.new()
 	local self =  setmetatable({}, StateMachine)

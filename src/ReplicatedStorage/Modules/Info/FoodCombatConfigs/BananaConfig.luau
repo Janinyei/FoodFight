@@ -6,15 +6,17 @@ return {
         Speed = 100,
         InitUpwardVelocity = Vector3.new(0, 10, 0),
         Acceleration = Vector3.new(0, -40, 0),
-        MaxBounces = 0,
-        Restitution = 1,
+        MaxBounces = 5,
+        MaxHits = 1,
+        Restitution = 0.8,
         DestroyOnDamage = true,
+        IncludeModelInCleanup = false
     },
 
     Combat = {
-        ChickenDamage = 20,
+        PeelDamage = 5,
         BaseDamage = 20,
-        Cooldown = 0.5
+        Cooldown = 0.2
     },
 
     Energy = {

@@ -103,7 +103,7 @@ module.DefaultData = {
 		--Food is NOT stack-able
 
 		Equipped = {
-			Food = "Egg",
+			Food = "Banana",
 			Trails = "Basic",
 			Auras = "idk" --can't set to nil cuz ProfileStore deletes nil keys
 		},

@@ -34,9 +34,25 @@ function FoodCombatManager:Start()
 
 		if action == "Fire" then
 			print(data)
-			self.FoodModules[data.Combat.FoodName]:Fire(player, data)
+
+			if self.FoodModules[data.Combat.FoodName].OnFire then
+				self.FoodModules[data.Combat.FoodName]:OnFire(player, data) --used to handle additional functionality
+			end
+
+			if self.FoodModules[data.Combat.FoodName].Fire then
+				self.FoodModules[data.Combat.FoodName]:Fire(player, data)
+			else
+				--you can do projectile checks here as well to validate replication--
+				print(data)
+				self.CombatEvent:FireExcept(true, { player }, "Fire", data)
+			end
 		elseif action == "Hit" then
+			if self.FoodModules[data.Combat.FoodName].OnHit then
 			self.FoodModules[data.Combat.FoodName]:OnHit(player, data)
+			end
+
+			self.CombatEvent:FireExcept(true, { player }, "Hit", data)
+						
 		elseif action == "ActivateUltimate" then
 			return self:ActivateUltimate(player)
 		end
@@ -47,7 +63,6 @@ end
 
 --note: use this function to handle ALL damaging
 function FoodCombatManager:DamageCharacter(TargetCharacter: Model, Amount: number, Attacker: Player?)
-	
 	if not self.CombatEnabled then
 		return
 	end --combat disabled means no damage
@@ -72,12 +87,11 @@ function FoodCombatManager:DamageCharacter(TargetCharacter: Model, Amount: numbe
 	local TargetPlayer = Players:GetPlayerFromCharacter(TargetCharacter)
 
 	if Attacker then
-	self.CombatEvent:Fire(true, Attacker , "DamageDealt", {
-		Amount = Amount,
-		TargetCharacter = TargetCharacter,
-	})
-
-end
+		self.CombatEvent:Fire(true, Attacker, "DamageDealt", {
+			Amount = Amount,
+			TargetCharacter = TargetCharacter,
+		})
+	end
 
 	if not TargetPlayer then
 		return

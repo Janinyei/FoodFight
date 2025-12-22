@@ -8,8 +8,6 @@ local RunService = game:GetService("RunService")
 
 --Modules--
 local Modules = ReplicatedStorage.Modules
-local FoodIndex = require(Modules.Info.FoodProjectileIndex)
-
 --Events
 
 --Constants
@@ -113,21 +111,7 @@ function ProjectileManager:ValidateFireRequest(player, data)
 		return false, "Too many projectiles"
 	end
 
-	-- Validate food
-	local foodData = FoodIndex[data.FoodName]
-	if not foodData then
-		return false, "Invalid food"
-	end
 
-	-- Check cooldown
-	local playerCooldowns = self.PlayerCooldowns[player]
-	if playerCooldowns and playerCooldowns[data.FoodName] then
-		local timeSinceLastUse = tick() - playerCooldowns[data.FoodName]
-		local requiredCooldown = foodData.Cooldown or 1
-		if timeSinceLastUse < requiredCooldown * 0.8 then
-			return false, "Food on cooldown"
-		end
-	end
 
 	-- Validate origin
 	local distance = (data.Origin - humanoidRootPart.Position).Magnitude
@@ -150,7 +134,6 @@ function ProjectileManager:HandleProjectileHit(player, data)
 		return
 	end
 
-	local foodData = FoodIndex[projectile.FoodName] or {}
 	local shouldDestroy = false
 
 	-- Handle player/NPC hit
@@ -185,29 +168,7 @@ function ProjectileManager:HandleProjectileHit(player, data)
 			return
 		end
 
-		-- Apply damage
-		local humanoid = targetCharacter:FindFirstChildOfClass("Humanoid")
-		if humanoid then
-			local damage = foodData.BaseDamage or 10
-			local wasAlive = humanoid.Health > 0
-			humanoid:TakeDamage(damage)
-			local isDead = humanoid.Health <= 0
-			
-			-- for damage indicator
-			self.ProjectileEvent:Fire(true, player, "Damage", {
-				Target = data.HitPlayer,
-				Damage = damage,
-				Attacker = player,
-				IsKill = isDead and wasAlive
-			})
 
-			-- Mark as hit
-			projectile.HitPlayers[data.HitPlayer] = true
-
-			-- Check if should destroy
-			shouldDestroy = not foodData.Pierce
-				or (foodData.PierceCount and #projectile.HitPlayers >= foodData.PierceCount)
-		end
 	else
 		-- Environment hit - check bounces
 		if projectile.BounceCount >= (foodData.MaxBounces or 0) then

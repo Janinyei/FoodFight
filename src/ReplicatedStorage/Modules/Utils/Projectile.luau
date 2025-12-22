@@ -92,7 +92,8 @@ RunService.Heartbeat:Connect(function(deltaTime)
 			else
 				-- Max bounces reached, destroy projectile
 
-				proj:Destroy()
+				proj.Active = false
+				--proj:Destroy()
 
 			end
 		end
@@ -103,9 +104,7 @@ end)
 function Projectile.new(data: ProjectileData)
 	local self = setmetatable({}, Projectile)
 	
-	-- Generate or use provided ID
-	self.Id = data.Id or HttpService:GenerateGUID(false)
-
+	
 	-- Core properties
 	self.Origin = data.Origin
 	self.Position = data.Origin
@@ -114,10 +113,13 @@ function Projectile.new(data: ProjectileData)
 	self.MaxDistance = data.MaxDistance or 9999
 	self.Active = false
 	self.Lifetime = data.Lifetime or 20
-	self.IsReplicated = data.IsReplicated or false
+	self.IncludeModelInCleanup = data.IncludeModelInCleanup or true
 
-	self.MaxHits = 999 --determines how many times a hit can register on an attacked character
+	self.MaxHits = data.MaxHits or 999 --determines how many times a hit can register on an attacked character
 	self.CurrentHits = 0
+	
+	-- Generate or use provided ID
+		self.Id = data.Id or  (self.Owner.UserId.."_"..HttpService:GenerateGUID(false))
 	
 	-- Physical properties
 	self.Restitution = data.Restitution or 0.35
@@ -182,6 +184,7 @@ function Projectile:LoadModel(Model: Model | BasePart)
 		if self.Model:IsA("Model") then
 			self.Model:PivotTo(CFrame.new(self.Position) * self.Rotation)
 		else
+			print(self:GetData())
 			self.Model.CFrame = CFrame.new(self.Position) * self.Rotation
 		end
 	end
@@ -266,6 +269,30 @@ function Projectile:Bounce(hitNormal: Vector3)
 	end
 end
 
+function Projectile:GetData()
+	return {
+		Origin = self.Origin,
+		Id = self.Id,
+		Position = self.Position,
+		Velocity = self.Velocity,
+		Owner = self.Owner,
+		MaxDistance = self.MaxDistance,
+		Active = self.Active,
+		Lifetime = self.Lifetime,
+		Acceleration = self.Acceleration,
+		MaxBounces = self.MaxBounces,
+		AngularVelocity = self.AngularVelocity,
+		Rotation = self.Rotation,
+		StartTime = self.StartTime,
+		LastUpdateTime = self.LastUpdateTime,
+		Model = self.Model,
+		MaxHits = self.MaxHits,
+		CurrentHits = self.CurrentHits,
+		BounceCount = self.BounceCount,
+		IncludeModelInCleanup = self.IncludeModelInCleanup
+	}
+end
+
 function Projectile:Stop()
 	self.Active = false
 end
@@ -274,17 +301,22 @@ function Projectile:Continue()
 	self.Active = true
 end
 
+--
+
+
 function Projectile:Destroy()
 	-- Set inactive first
 	self.Active = false
 	
 	-- Fire destroyed event
-	self.OnDestroyed:Fire()
+	self.OnDestroyed:Fire(self)
 	
 	-- Clean up model
-	if self.Model then
+	if self.Model and self.IncludeModelInCleanup == false then --users can choose whether they simply want to detach the model or destroy it
 		self.Model:Destroy()
 		self.Model = nil
+
+
 	end
 	
 	-- Remove from active projectiles

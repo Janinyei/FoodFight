@@ -107,5 +107,8 @@ return {
                 return character, isPlayer
             end
         end
-    end
+    end,
+
+
+   Lerp = function (a, b, t) return a + (b - a) * t end
 }

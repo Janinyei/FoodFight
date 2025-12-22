@@ -43,20 +43,6 @@ function CombatGui:Init(Core)
 end
 
 function CombatGui:Start()
-	--connects to handle functions for damaging and stuff
-	self.ProjectileController.OnDamaged:Connect(function(TargetCharacter, Damage, isKill)
-		local TargetPlayer = Players:GetPlayerFromCharacter(TargetCharacter)
-		self:ShowDamageIndicator(TargetCharacter, Damage)
-		self:ShowHitmarker(0.35)
-
-	
-		self:FeedbackMessage(TargetPlayer,"Elimination!", 100)
-		if isKill and TargetPlayer then
-			self:FeedbackMessage(TargetPlayer, "Elimination!", 100)
-		end
-	end)
-
-
 	--Signals--
 	
 		self.DamageDealt = self.FoodCombatController.DamageDealt
