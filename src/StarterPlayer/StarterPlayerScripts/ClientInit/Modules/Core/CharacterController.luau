@@ -92,6 +92,8 @@ function CharacterController:SetupCharacter(char: Model)
 	RayParams.FilterType = Enum.RaycastFilterType.Exclude
 	RayParams.FilterDescendantsInstances = { workspace.VisualEffectsCache, self.Character }
 
+	self.ParkourRayParams = RayParams
+
 	self.ParkourStates = self._janitor:AddObject(StateMachine.new())
 	--state machine for parkour actions like wallrunning, sliding, vaulting, etc
 	--state machine has a Destroy method so this should work
@@ -112,6 +114,7 @@ function CharacterController:SetupCharacter(char: Model)
 			--slide canceling for bhopping
 			if ParkourStates:IsState("Sliding") then
 				ParkourStates:ClearState()
+				self:_handleBhop()
 			end
 
 			local FrontRay = workspace:Raycast(
@@ -286,6 +289,25 @@ end
 
 function CharacterController:_activateSlide()
 	
+	if self.Humanoid:GetState() == Enum.HumanoidStateType.Running  and self.Humanoid.MoveDirection.Magnitude ~= 0 then
+		print("slide trigger")
+	
+		local DownRay = workspace:Raycast(self.HRP.Position ,  Vector3.yAxis * -5 , self.ParkourRayParams)
+	
+		if DownRay and Humanoid.WalkSpeed > 0 then
+			ParkourStates:SetState("Sliding")
+			AnimationController.Play("SlideEnter")
+	
+			FeedbackEvent:Fire(true, 30, "", "Exp")
+	
+	
+			Humanoid:ChangeState(Enum.HumanoidStateType.Physics)
+	
+			--HRP.AssemblyLinearVelocity = HRP.CFrame.LookVector * Utils.v3flat(HRP.AssemblyLinearVelocity).Magnitude
+			Humanoid.AutoRotate = false
+		end
+	
+	end
 end
 
 function CharacterController:_slideUpdate(dt)
@@ -293,7 +315,10 @@ function CharacterController:_slideUpdate(dt)
 end
 
 function CharacterController:_deactivateSlide()
-	
+	--only deactivate sliding when they're allowed to 
+
 end
+
+
 
 return CharacterController
