@@ -38,7 +38,8 @@ function FoodCombatController:Init(Core)
 	self.UltimateActivated = false
 	self.CanUltimate = false
 	self.CurrentEnergy = 0 -- on the server after using a move that costs energy, use the remote to update this value in order to make gameplay smoother, so the client doesn't rely on the server-sided check
-	self.LastFired = tick() -- for cooldown
+	self.LastNormalFired = tick()
+	self.LastUltimateFired = tick()
 	--serves to: 1. update energy GUI 2. Prevent players from launching attacks
 
 	--events
@@ -48,6 +49,8 @@ function FoodCombatController:Init(Core)
 	self.EnergyChanged = Signal.new()
 	self.DamageDealt = Signal.new()
 	self.DamageReceived = Signal.new()
+	self.UltimateActivated = Signal.new()
+	self.UltimateDeactivated = Signal.new()
 
 	--loading food modules--
 	self.FoodModules = {}
@@ -83,23 +86,17 @@ function FoodCombatController:Start()
 
 		if inputState == Enum.UserInputState.Begin then
 			if inputObject.UserInputType == Enum.UserInputType.MouseButton1 then
-				if
-					tick() - self.LastFired
-					>= require(Modules.Info.FoodCombatConfigs[self.CurrentFood .. "Config"]).Combat.Cooldown
-				then
-					self.LastFired = tick()
-					self:Fire()
-				end
+				self:HandleNormalAttack()
 			elseif inputObject.UserInputType == Enum.UserInputType.MouseButton2 then
 				self.CameraController:ToggleAimZoom(true)
 				self:StartAim()
 			elseif inputObject.KeyCode == Enum.KeyCode.E then
-				self:ActivateUltimate(LocalPlayer)
+				self:HandleUltimateActivation()
 			end
 		elseif inputState == Enum.UserInputState.End then
 			if inputObject.UserInputType == Enum.UserInputType.MouseButton2 then
 				self:StopAim()
-			self.CameraController:ToggleAimZoom(false)
+				self.CameraController:ToggleAimZoom(false)
 			end
 		end
 	end
@@ -114,7 +111,6 @@ function FoodCombatController:Start()
 	)
 
 	--setup replication--
-
 	self:StartReplication()
 end
 
@@ -151,46 +147,51 @@ function FoodCombatController:StopAim()
 	self.TrajectoryBeam:Disable()
 end
 
---requests to server to activate ultimate ability
-function FoodCombatController:ActivateUltimate()
+function FoodCombatController:HandleUltimateActivation()
 	local CanActivateUlt = self.CombatEvent:Invoke(10, "ActivateUltimate")
 
-	print(CanActivateUlt)
 	if CanActivateUlt then
 		self.UltimateActivated = true
-		print("ultimate activation success")
-		--insert script if any food has custom usage logic
-		--do something like OnUltimateActivated or smtn idk
+		self.LastUltimateFired = tick()
+		
+		local FoodModule = self.FoodModules[self.CurrentFood]
+		if FoodModule and FoodModule.OnUltimateActivated then
+			FoodModule:OnUltimateActivated()
+		end
+		
+		self.UltimateActivated:Fire()
 	end
 end
 
---basic attack function
-function FoodCombatController:Fire()
-	--[[cooldown
-   local cooldown = ProjectileData.Cooldown or 1
-      if self.ProjectileCooldowns[FoodName] and currentTime - self.ProjectileCooldowns[FoodName] < cooldown then
-         return
-      end
-]]
+function FoodCombatController:HandleNormalAttack()
+	if self.UltimateActivated then
+		self:FireUltimate()
+		return
+	end
 
+	local FoodConfig = require(Modules.Info.FoodCombatConfigs[self.CurrentFood .. "Config"])
+	if tick() - self.LastNormalFired >= FoodConfig.Combat.Cooldown then
+		self.LastNormalFired = tick()
+		self:FireNormal()
+	end
+end
+
+function FoodCombatController:FireNormal()
 	local FoodModule = self.FoodModules[self.CurrentFood]
 	local ProjectileConfig = FoodModule.Config.Projectile
 
-	if self.FoodModules[self.CurrentFood].Fire then
-		self.FoodModules[self.CurrentFood]:Fire()
-		return --guard clause
+	if FoodModule.FireNormal then
+		FoodModule:FireNormal()
+		return
 	end
 
 	local FireData = {
 		Sender = LocalPlayer,
-		Combat =  {
+		Combat = {
 			FoodName = self.CurrentFood,
-			isUltimate = self.UltimateActivated,
-
+			isUltimate = false,
 		},
-
 		Projectile = {	
-			
 			Owner = LocalPlayer,
 			Origin = LocalPlayer.Character.HumanoidRootPart.Position,
 			Velocity = (Mouse.Hit.Position - LocalPlayer.Character.HumanoidRootPart.Position).Unit * ProjectileConfig.Speed
@@ -198,31 +199,30 @@ function FoodCombatController:Fire()
 			Acceleration = ProjectileConfig.Acceleration,
 			MaxBounces = ProjectileConfig.MaxBounces,
 			RaycastParams = self.ProjectileController.RaycastParams,
-			--IncludeModelInCleanup = ProjectileConfig.IncludeModelInCleanup
-		}}
+			MaxHits = ProjectileConfig.MaxHits
+		}
+	}
 
-		
-	local Projectile = self.ProjectileController:FireProjectile(FoodModels[self.CurrentFood]:Clone(), FireData.Projectile )
+	local Projectile = self.ProjectileController:FireProjectile(FoodModels[self.CurrentFood]:Clone(), FireData.Projectile)
 
-	FireData.Projectile.Id = Projectile:GetData().Id --adds more data to the projectile
-	FireData.Projectile.RaycastParams = nil --prevents from being replicated so the remote event won't error. Kinda annoying that roblox doesn't replicate RaycastParams but whatever
-	if FoodModule.OnFire then --additional logic to default projectiles
-		FoodModule:OnFire(FireData)
+	FireData.Projectile.Id = Projectile:GetData().Id
+	FireData.Projectile.RaycastParams = nil
+
+	if FoodModule.OnFireNormal then
+		FoodModule:OnFireNormal(FireData)
 	end
 
-	
 	print(Projectile:GetData())
-	
+
 	self.CombatEvent:Fire(true, "Fire", FireData)
 
 	Projectile.OnHit:Connect(function(HitResult)
-		if FoodModule.OnHit then
+		if FoodModule.OnHitNormal then
 			local hitData = {
 				Sender = LocalPlayer,
 				Combat = {
-					
-					FoodName = "Banana",
-					Ultimate = self.UltimateActivated,
+					FoodName = self.CurrentFood,
+					isUltimate = false,
 				},
 				Projectile = {
 					Id = Projectile.Id,
@@ -234,22 +234,94 @@ function FoodCombatController:Fire()
 				},
 			}
 
-			FoodModule:OnHit(LocalPlayer, hitData)
-
-			--replicate to server
+			FoodModule:OnHitNormal(LocalPlayer, hitData)
 			self.CombatEvent:Fire(true, "Hit", hitData)
 		end
 	end)
 
-
 	Projectile.OnDestroyed:Connect(function(proj)
 		local ProjModel = proj.Model
 		if ProjModel then
-			--this woudl only work if it was a basepart or special mesh etc, so i needa make it work with models
 			ProjModel.Anchored = false
 			ProjModel.CanCollide = true
 		end
 	end)
+end
+
+function FoodCombatController:FireUltimate()
+	local FoodModule = self.FoodModules[self.CurrentFood]
+	local ProjectileConfig = FoodModule.Config.Projectile
+
+	if FoodModule.FireUltimate then
+		FoodModule:FireUltimate()
+		return
+	end
+
+	local FireData = {
+		Sender = LocalPlayer,
+		Combat = {
+			FoodName = self.CurrentFood,
+			isUltimate = true,
+		},
+		Projectile = {	
+			Owner = LocalPlayer,
+			Origin = LocalPlayer.Character.HumanoidRootPart.Position,
+			Velocity = (Mouse.Hit.Position - LocalPlayer.Character.HumanoidRootPart.Position).Unit * ProjectileConfig.Speed
+				+ (ProjectileConfig.InitUpwardVelocity or Vector3.zero),
+			Acceleration = ProjectileConfig.Acceleration,
+			MaxBounces = ProjectileConfig.MaxBounces,
+			RaycastParams = self.ProjectileController.RaycastParams,
+			MaxHits = ProjectileConfig.MaxHits
+		}
+	}
+
+	local Projectile = self.ProjectileController:FireProjectile(FoodModels[self.CurrentFood]:Clone(), FireData.Projectile)
+
+	FireData.Projectile.Id = Projectile:GetData().Id
+	FireData.Projectile.RaycastParams = nil
+
+	if FoodModule.OnFireUltimate then
+		FoodModule:OnFireUltimate(FireData)
+	end
+
+	print(Projectile:GetData())
+
+	self.CombatEvent:Fire(true, "Fire", FireData)
+
+	Projectile.OnHit:Connect(function(HitResult)
+		if FoodModule.OnHitUltimate then
+			local hitData = {
+				Sender = LocalPlayer,
+				Combat = {
+					FoodName = self.CurrentFood,
+					isUltimate = true,
+				},
+				Projectile = {
+					Id = Projectile.Id,
+					HitResult = {
+						Instance = HitResult.Instance,
+						Position = HitResult.Position,
+						Normal = HitResult.Normal,
+					},
+				},
+			}
+
+			FoodModule:OnHitUltimate(LocalPlayer, hitData)
+			self.CombatEvent:Fire(true, "Hit", hitData)
+		end
+	end)
+
+	Projectile.OnDestroyed:Connect(function(proj)
+		local ProjModel = proj.Model
+		if ProjModel then
+			ProjModel.Anchored = false
+			ProjModel.CanCollide = true
+		end
+	end)
+end
+
+function FoodCombatController:Fire()
+	self:HandleNormalAttack()
 end
 
 --Attack Hit--
@@ -300,19 +372,21 @@ function FoodCombatController:StartReplication()
 		elseif action == "DeactivateUltimate" then
 			print("ultimate deactivated from client")
 			self.UltimateActivated = false
+			
+			local FoodModule = self.FoodModules[data.Combat.FoodName]
+			if FoodModule and FoodModule.OnUltimateDeactivated then
+				FoodModule:OnUltimateDeactivated()
+			end
+			
+			self.UltimateDeactivated:Fire(data)
 		elseif action == "UpdateEnergy" then
 			self.CurrentEnergy = data.Energy
-			--print("energy replicated to client: " .. data.Energy)
 			self.EnergyChanged:Fire(data)
-		elseif action == "DamageDealt" then --received by a  player who did some damage
-			--use to:
-			-- Display damage numbers
-			-- Activate Hitmarker
+		elseif action == "DamageDealt" then
 			print("handling damage dealt effects")
 			self.DamageDealt:Fire(data)
-		elseif action == "Damaged" then --received by a player who got hit
-			--use to:
-			--activate damage indicator
+		elseif action == "DamageReceived" then
+			print("handling damage received effects")
 			self.DamageReceived:Fire(data)
 		else
 			print(action, data)

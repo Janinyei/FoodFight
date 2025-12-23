@@ -4,59 +4,69 @@
 local CharacterManager = {}
 local Players = game.Players
 
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local Modules = ReplicatedStorage.Modules
+
+local UtilFunctions = require(Modules.Utils.Functions)
 
 function CharacterManager:Init(Core)
 	self.StatusEffectManager = Core:Get("StatusEffectManager")
-
 
 	Players.PlayerAdded:Connect(function(player)
 		player.CharacterAdded:Connect(function(char)
 			--setup ragdoll constraints--
 			local hum = char:WaitForChild("Humanoid")
-            hum.BreakJointsOnDeath = false
-            self:_setupRagdollConstraints(char)
+			hum.BreakJointsOnDeath = false
+			self:_setupRagdollConstraints(char)
 
-            hum.Died:Connect(function()
-                self:EnableRagdoll(char)
-                
-                hum.RootPart:ApplyImpulse(hum.RootPart:GetMass() * Vector3.yAxis * 500)
-                hum.RootPart:ApplyAngularImpulse(hum.RootPart:GetMass() * Vector3.one * math.random(100, 500))
-            end)
+			hum.Died:Connect(function()
+				self:EnableRagdoll(char)
+
+				hum.RootPart:ApplyImpulse(hum.RootPart:GetMass() * Vector3.yAxis * 500)
+				hum.RootPart:ApplyAngularImpulse(hum.RootPart:GetMass() * Vector3.one * math.random(100, 500))
+			end)
 		end)
 	end)
 end
 
-
 function CharacterManager:Start()
-	self.StatusEffectManager.StatusEffectApplied:Connect(function(player, effectName)
-		if effectName == "Ragdoll"  then 
-			self:EnableRagdoll()
+	self.StatusEffectManager.StatusEffectApplied:Connect(function(plr, effectName)
+		if effectName == "Ragdoll" then
+			self:EnableRagdoll(plr.Character)
+		end
+	end)
+
+	self.StatusEffectManager.StatusEffectRemoved:Connect(function(plr, effectName)
+		if effectName == "Ragdoll" then
+			self:DisableRagdoll(plr.Character)
 		end
 	end)
 end
 
-
-function CharacterManager:EnableRagdoll(char) 
+function CharacterManager:EnableRagdoll(char)
 	print("now ragdolling")
-	for _, v in pairs(char:GetDescendants()) do  
+	for _, v in pairs(char:GetDescendants()) do
 		if v:IsA("Motor6D") then
 			v.Enabled = false
 		elseif v:IsA("BallSocketConstraint") then
-			v.Enabled =  true
+			v.Enabled = true
 		end
 	end
 end
 
-function CharacterManager:DisableRagdoll()
-	--implement this plz
+function CharacterManager:DisableRagdoll(char)
+	for _, v in pairs(char:GetDescendants()) do
+		if v:IsA("Motor6D") then
+			v.Enabled = true
+		elseif v:IsA("BallSocketConstraint") then
+			v.Enabled = false
+		end
+	end
 end
 
-
-
 function CharacterManager:_setupRagdollConstraints(char)
-    
-	for _, v in pairs(char:GetDescendants()) do  --ragdoll
+	for _, v in pairs(char:GetDescendants()) do --ragdoll
 		if v:IsA("Motor6D") then
 			local a0, a1 = Instance.new("Attachment"), Instance.new("Attachment")
 			a0.CFrame = v.C0
@@ -67,20 +77,15 @@ function CharacterManager:_setupRagdollConstraints(char)
 			b.Attachment0 = a0
 			b.Attachment1 = a1
 			b.Parent = v.Part0
-            b.Enabled =  false
-		    v.Enabled = true
+			b.Enabled = false
+			v.Enabled = true
 		end
 	end
- end
+end
 
+function CharacterManager:ApplyStatusEffect() end
 
+function CharacterManager:CheckStatusEffect(player, StatusName: string) end
 
- function CharacterManager:ApplyStatusEffect()
-     
- end
-
- 
- function CharacterManager:CheckStatusEffect(player, StatusName: string) end
- 
- function CharacterManager:RemoveStatusEffect(player, StatusName: string, RemoveAll: boolean?) end
+function CharacterManager:RemoveStatusEffect(player, StatusName: string, RemoveAll: boolean?) end
 return CharacterManager

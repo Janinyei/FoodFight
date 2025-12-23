@@ -13,34 +13,43 @@ local Modules = ReplicatedStorage.Modules
 --Imports--
 local UtilFunctions = require(ReplicatedStorage.Modules.Utils.Functions)
 local Hitbox = require(Modules.Utils.Hitbox)
---
+
 function BananaServer:Init(Core)
 	self.ProjectileManager = Core:Get("ProjectileManager")
-	self.Config = require(ReplicatedStorage.Modules.Info.FoodCombatConfigs.EggConfig)
+	self.Config = require(ReplicatedStorage.Modules.Info.FoodCombatConfigs.BananaConfig)
 	self.CombatEvent = Core:Get("SharedRemotes"):GetEvent("CombatEvent")
 	self.FoodCombatManager = Core:Get("FoodCombatManager")
 	self.EnergyManager = Core:Get("EnergyManager")
 	self.StatusEffectManager = Core:Get("StatusEffectManager")
 end
 
-function BananaServer:OnFire(player, data)
-	if data.Combat.isUltimate then
-		self.EnergyManager:Drain(player, 100)
-	end
+function BananaServer:OnFireNormal(player, data)
 end
 
-function BananaServer:OnHit(player, data)
+function BananaServer:OnHitNormal(player, data)
+	local character = UtilFunctions.FindCharacter(data.Projectile.HitResult.Instance)
+	if not character then
+		return
+	end
+
+	self.FoodCombatManager:DamageCharacter(character, self.Config.Combat.BaseDamage, player)
+end
+
+function BananaServer:OnFireUltimate(player, data)
+	self.EnergyManager:Drain(player, self.Config.Energy.AbilityCost or 100)
+end
+
+function BananaServer:OnHitUltimate(player, data)
 	local character = UtilFunctions.FindCharacter(data.Projectile.HitResult.Instance)
 	if character then
-        --simply ragdoll whoever it hits
-		return
+		self.FoodCombatManager:DamageCharacter(character, self.Config.Combat.UltimateDamage or self.Config.Combat.BaseDamage * 2, player)
 	end
 
-	if not data.Combat.Ultimate then
-		return
-	end
+	self:SpawnBananaPeel(data, player)
+end
 
-	--make a downwards ray to spawn on ground
+--make a downwards ray to spawn on ground
+function BananaServer:SpawnBananaPeel(data, owner)
 	local RayOrigin = data.Projectile.HitResult.Position + data.Projectile.HitResult.Normal
 	local RayDir = Vector3.yAxis * -4
 	local Params = RaycastParams.new()
@@ -48,40 +57,36 @@ function BananaServer:OnHit(player, data)
 	Params.FilterDescendantsInstances = { workspace.VisualEffectsCache }
 	local PeelRay = workspace:Raycast(RayOrigin, RayDir)
 	
-	if PeelRay then
-		local BananaPeel = ReplicatedStorage.Assets.Food.Banana.BananaPeel:Clone()
-		BananaPeel.Parent = workspace.VisualEffectsCache
-		BananaPeel.CanQuery = false
-		BananaPeel.CanCollide = false
-		BananaPeel.Anchored = true
-		BananaPeel.Position = PeelRay.Position + Vector3.yAxis * BananaPeel.Size.Y / 2
-        
+	if not PeelRay then
+		return
+	end
 
-		Debris:AddItem(BananaPeel, 20)
+	local BananaPeel = ReplicatedStorage.Assets.Food.Banana.BananaPeel:Clone()
+	BananaPeel.Parent = workspace.VisualEffectsCache
+	BananaPeel.CanQuery = false
+	BananaPeel.CanCollide = false
+	BananaPeel.Anchored = true
+	BananaPeel.Position = PeelRay.Position + Vector3.yAxis * BananaPeel.Size.Y / 2
 
-        local BananaPeelHitbox =  Hitbox.new()
-        BananaPeelHitbox.DetectionMode = "Region"
-      --  BananaPeelHitbox:SetOwner(player.Character)
-        BananaPeelHitbox.Size = Vector3.one * 5
-        BananaPeelHitbox.CFrame = CFrame.new(data.Projectile.HitResult.Position + Vector3.yAxis * BananaPeelHitbox.Size.Y/2)
-         BananaPeelHitbox.DebugMode = true
+	Debris:AddItem(BananaPeel, 20)
 
+	local BananaPeelHitbox = Hitbox.new()
+	BananaPeelHitbox.DetectionMode = "Region"
+	BananaPeelHitbox.Size = Vector3.one * 5
+	BananaPeelHitbox.CFrame = CFrame.new(data.Projectile.HitResult.Position + Vector3.yAxis * BananaPeelHitbox.Size.Y / 2)
+	BananaPeelHitbox.DebugMode = true
 
-        BananaPeelHitbox:Start()
+	BananaPeelHitbox:Start()
 
-
-        BananaPeelHitbox.OnHit = function(hitData)
-            print(hitData.Model)  
-            --apply ragdoll status effect
-
-            local hitCharacter = hitData.Model
-			local hitPlayer = Players:GetPlayerFromCharacter(hitCharacter)
-			if hitPlayer then
-				self.StatusEffectManager:ApplyEffect(hitPlayer, "Ragdoll")
-			end
-			
-            BananaPeelHitbox:Destroy()
-        end
+	BananaPeelHitbox.OnHit = function(hitData)
+		local hitCharacter = hitData.Model
+		local hitPlayer = Players:GetPlayerFromCharacter(hitCharacter)
+		
+		if hitPlayer then
+			self.StatusEffectManager:ApplyEffect(hitPlayer, "Ragdoll")
+		end
+		
+		BananaPeelHitbox:Destroy()
 	end
 end
 

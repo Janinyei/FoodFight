@@ -15,7 +15,8 @@ function SharedRemotes:Init()
 		"VFXEvent",
 		"GameStatusEvent",
 		"CombatEvent",
-		"CharacterEvent"
+		"CharacterEvent",
+		"StatusEffectEvent"
 	}
 
 	self.Events = nil
