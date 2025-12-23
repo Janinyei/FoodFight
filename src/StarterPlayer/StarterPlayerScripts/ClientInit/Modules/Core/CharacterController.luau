@@ -37,8 +37,6 @@ function CharacterController:Init(Core)
 	--Janitors--
 	self._janitor = Janitor.new()
 
-	self:SetupCharacter(self.Character) --initial load if characteradded event doesn't work--
-
 	LocalPlayer.CharacterAdded:Connect(function(char: Model)
 		if not self.Character then --makes sure you don't double load
 			self:SetupCharacter(char)
@@ -49,9 +47,10 @@ function CharacterController:Init(Core)
 	LocalPlayer.CharacterRemoving:Connect(function(character)
 		self:Cleanup()
 	end)
+end
 
-	--setup input management--
-	self.InputController:
+function CharacterController:Start()
+	self:SetupCharacter(self.Character) --initial load if characteradded event doesn't work--
 end
 
 -- Called from StarterCharacterScripts
@@ -76,7 +75,22 @@ function CharacterController:SetupCharacter(char: Model)
 		maxTiltAngle = 10,
 		rotateHRPWithCamera = false,
 		defaultC0 = self.HRP.RootJoint.C0,
+
+		--vaulting--
+		maxWallVaultDistance = 10,
+		maxLedgeHeight = 10,
+		vaultDuration = 0.25,
+
+		--sliding--
+		defaultSlideDuration = 4,
+		slideMaxCeilingHeight = 3, --ceiling height for someone sliding underneath a surface
+
+		
 	}
+
+	local RayParams = RaycastParams.new()
+	RayParams.FilterType = Enum.RaycastFilterType.Exclude
+	RayParams.FilterDescendantsInstances = { workspace.VisualEffectsCache, self.Character }
 
 	self.ParkourStates = self._janitor:AddObject(StateMachine.new())
 	--state machine for parkour actions like wallrunning, sliding, vaulting, etc
@@ -90,20 +104,59 @@ function CharacterController:SetupCharacter(char: Model)
 	--parkour vars
 	local ParkourStates = self.ParkourStates
 	local ParkourConfig = self.ParkourConfig
-	--set up binds--
+	--set up bind actions--
+	--setup input management--
+	self.InputController:SetActionCallback("UpAction", function(state, inputObj)
+		if state == Enum.UserInputState.Begin then
+
+			--slide canceling for bhopping
+			if ParkourStates:IsState("Sliding") then
+				ParkourStates:ClearState()
+			end
+
+			local FrontRay = workspace:Raycast(
+				hrp.CFrame.Position,
+				hrp.CFrame.LookVector * ParkourConfig.maxWallVaultDistance,
+				RayParams
+			)
+
+			if FrontRay then
+				
+				local Angle = math.deg( FrontRay.Normal:Angle((hrp.Position - FrontRay.Position).Unit))
+				print(Angle)
+				if Angle <= 40 then
+					local LedgeRay = workspace:Raycast(
+						FrontRay.Position + hrp.CFrame.LookVector * 0.1 + Vector3.yAxis * ParkourConfig.maxLedgeHeight,
+						Vector3.yAxis * -ParkourConfig.maxLedgeHeight,
+						RayParams
+					)
+
+					if LedgeRay then
+						
+						ParkourStates:SetState("Vaulting")
+					--	hrp:ApplyImpulse(Vector3.yAxis * 100 * hrp:GetMass())
+					end
+
+					task.delay(ParkourConfig.vaultDuration, function() --idk if this would cause problems but we'll see
+						if ParkourStates:IsState("Vaulting") then ---put in place to prevent annoying interruptions from task.delay
+							ParkourStates:ClearState()
+						end
+					end)
+				end
+			end
+		end
+	end)
 
 	--setup initial movement--
 	hum.WalkSpeed = ParkourConfig.baseSpeed
 	hum.UseJumpPower = true
-	hum.AutoRotate = false
+	hum.AutoRotate = false --very necessary
 
 	hum.Died:Connect(function()
 		self:_humanoidDied()
 	end)
 
 	self._janitor:Add(RunService.PreRender:Connect(function(dt)
-		--if ragdolled then return  end
-
 		self:_updateHRPOrientation(dt)
 		self:_updateMovement(dt)
 		self:_vaultUpdate(dt)
@@ -219,12 +272,12 @@ function CharacterController:_humanoidDied()
 	--self.HRP:ApplyAngularImpulse(self.HRP:GetMass() * Vector3.one * math.random(100, 500))
 end
 
---simple increase of hrp assembly linear velocity
-function CharacterController:_vaultUpdate()
+--simple adjustment of hrp assembly linear velocity
+function CharacterController:_vaultUpdate(dt)
 	local hum = self.Humanoid
 	local hrp = hum.RootPart
 
-	if StateMachine:IsState("Vaulting") then
+	if self.ParkourStates:IsState("Vaulting") then
 		hrp.AssemblyLinearVelocity = Vector3.new(hrp.AssemblyLinearVelocity.X, 25, hrp.AssemblyLinearVelocity.Z)
 	end
 end

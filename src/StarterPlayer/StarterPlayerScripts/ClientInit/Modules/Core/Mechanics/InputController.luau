@@ -23,7 +23,7 @@ function InputController:Init(Core)
 			["Inputs"] = {Enum.UserInputType.MouseButton1, Enum.KeyCode.ButtonR2}
 		},
 		["UpAction"] = {
-					["Inputs"] = {Enum.KeyCode.Space, Enum.KeyCode.A}
+					["Inputs"] = {Enum.KeyCode.Space, Enum.KeyCode.ButtonA}
 				}
 	
 		-- Add more here

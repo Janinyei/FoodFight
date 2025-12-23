@@ -20,6 +20,7 @@ function BananaServer:Init(Core)
 	self.CombatEvent = Core:Get("SharedRemotes"):GetEvent("CombatEvent")
 	self.FoodCombatManager = Core:Get("FoodCombatManager")
 	self.EnergyManager = Core:Get("EnergyManager")
+	self.StatusEffectManager = Core:Get("StatusEffectManager")
 end
 
 function BananaServer:OnFire(player, data)
@@ -36,7 +37,6 @@ function BananaServer:OnHit(player, data)
 	end
 
 	if not data.Combat.Ultimate then
-        print("no banana is ult")
 		return
 	end
 
@@ -73,7 +73,13 @@ function BananaServer:OnHit(player, data)
         BananaPeelHitbox.OnHit = function(hitData)
             print(hitData.Model)  
             --apply ragdoll status effect
-              
+
+            local hitCharacter = hitData.Model
+			local hitPlayer = Players:GetPlayerFromCharacter(hitCharacter)
+			if hitPlayer then
+				self.StatusEffectManager:ApplyEffect(hitPlayer, "Ragdoll")
+			end
+			
             BananaPeelHitbox:Destroy()
         end
 	end

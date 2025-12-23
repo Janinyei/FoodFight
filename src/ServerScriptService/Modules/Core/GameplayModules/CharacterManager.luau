@@ -6,7 +6,9 @@ local Players = game.Players
 
 
 
-function CharacterManager:Init()
+function CharacterManager:Init(Core)
+	self.StatusEffectManager = Core:Get("StatusEffectManager")
+
 
 	Players.PlayerAdded:Connect(function(player)
 		player.CharacterAdded:Connect(function(char)
@@ -26,6 +28,15 @@ function CharacterManager:Init()
 end
 
 
+function CharacterManager:Start()
+	self.StatusEffectManager.StatusEffectApplied:Connect(function(player, effectName)
+		if effectName == "Ragdoll"  then 
+			self:EnableRagdoll()
+		end
+	end)
+end
+
+
 function CharacterManager:EnableRagdoll(char) 
 	print("now ragdolling")
 	for _, v in pairs(char:GetDescendants()) do  
@@ -35,6 +46,10 @@ function CharacterManager:EnableRagdoll(char)
 			v.Enabled =  true
 		end
 	end
+end
+
+function CharacterManager:DisableRagdoll()
+	--implement this plz
 end
 
 
