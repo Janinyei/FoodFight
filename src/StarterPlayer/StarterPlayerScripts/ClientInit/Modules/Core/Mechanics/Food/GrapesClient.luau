@@ -41,6 +41,7 @@ function GrapesClient:Init(Core)
 	self.ProjectileController = Core:Get("ProjectileController")
 	self.Config = require(ReplicatedStorage.Modules.Info.FoodCombatConfigs.GrapesConfig)
 	self.VFXController = Core:Get("VFXController")
+	self.CameraController = Core:Get("CameraController")
 	self.CombatEvent = Core:Get("SharedRemotes"):GetEvent("CombatEvent")
 	self.ClientDataController = Core:Get("ClientDataController")
 	self.IsUltimateActive = false
@@ -219,6 +220,8 @@ function GrapesClient:FireUltimate()
 			FireData.Projectile.Id = Proj.Id
 			FireData.Projectile.RaycastParams = nil
 			self.CombatEvent:Fire(true, "Fire", FireData)
+			
+			self:Shake(0.4, 35, 0.05, 0.1, Vector3.zero, Vector3.new(0.3, 0.3, 0.6))
 
 			Proj.OnHit:Connect(function(HitResult)
 				local hitData = {
@@ -241,6 +244,12 @@ function GrapesClient:FireUltimate()
 	end)
 end
 
+function GrapesClient:Shake(...)
+	if self.CameraController then
+		self.CameraController:Shake(...)
+	end
+end
+
 function GrapesClient:OnFire() end
 
 function GrapesClient:OnUltimateActivated()
@@ -254,6 +263,8 @@ function GrapesClient:OnUltimateActivated()
 	if grapes then
 		local Top = grapes:FindFirstChild("Top")
 		local Weld = Top and Top:FindFirstChild("GrapesWeld")
+		
+		self.UltShake = self.CameraController:ShakeSustain("HandheldCamera")
 		
 		if not self.RotationConn and Weld then
 			self.BaseWeldC0 = self.BaseWeldC0 or Weld.C0
@@ -290,6 +301,11 @@ function GrapesClient:OnUltimateDeactivated()
 	local grapes = self:GetHeldGrapes()
 	if grapes then
 		task.spawn(function()
+			if self.UltShake then
+				self.UltShake:StartFadeOut(0.5)
+				self.UltShake = nil
+			end
+
 			local fadeInfo = TweenInfo.new(0.5, Enum.EasingStyle.Sine, Enum.EasingDirection.Out)
 			local lastTween
 			for _, v in ipairs(grapes:GetDescendants()) do
