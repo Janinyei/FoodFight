@@ -33,22 +33,46 @@ function FoodCombatManager:Start()
 		end
 
 		if action == "Fire" then
-			print(data)
-
-			if self.FoodModules[data.Combat.FoodName].OnFire then
-				self.FoodModules[data.Combat.FoodName]:OnFire(player, data) --used to handle additional functionality
+			local module = self.FoodModules[data.Combat.FoodName]
+			if not module then
+				warn("food module not found for ", tostring(data.Combat.FoodName))
+				return
 			end
 
-			if self.FoodModules[data.Combat.FoodName].Fire then
-				self.FoodModules[data.Combat.FoodName]:Fire(player, data)
+			if data.Combat.Ultimate then
+				if module.OnFireUltimate then
+					module:OnFireUltimate(player, data)
+				end
 			else
-				--you can do projectile checks here as well to validate replication--
-				print(data)
+				if module.OnFireNormal then
+					module:OnFireNormal(player, data)
+				end
+			end
+
+			if module.Fire then
+				module:Fire(player, data)
+			else
 				self.CombatEvent:FireExcept(true, { player }, "Fire", data)
 			end
 		elseif action == "Hit" then
-			if self.FoodModules[data.Combat.FoodName].OnHit then
-			self.FoodModules[data.Combat.FoodName]:OnHit(player, data)
+			local module = self.FoodModules[data.Combat.FoodName]
+			if not module then
+				warn("food module not found for ", tostring(data.Combat.FoodName))
+				return
+			end
+
+			if data.Combat.Ultimate then
+				if module.OnHitUltimate then
+					module:OnHitUltimate(player, data)
+				end
+			else
+				if module.OnHitNormal then
+					module:OnHitNormal(player, data)
+				end
+			end
+
+			if module.OnHit then
+				module:OnHit(player, data)
 			end
 
 			self.CombatEvent:FireExcept(true, { player }, "Hit", data)

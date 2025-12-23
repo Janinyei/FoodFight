@@ -189,7 +189,7 @@ function FoodCombatController:FireNormal()
 		Sender = LocalPlayer,
 		Combat = {
 			FoodName = self.CurrentFood,
-			isUltimate = false,
+			Ultimate = false,
 		},
 		Projectile = {	
 			Owner = LocalPlayer,
@@ -222,7 +222,7 @@ function FoodCombatController:FireNormal()
 				Sender = LocalPlayer,
 				Combat = {
 					FoodName = self.CurrentFood,
-					isUltimate = false,
+					Ultimate = false,
 				},
 				Projectile = {
 					Id = Projectile.Id,
@@ -261,7 +261,7 @@ function FoodCombatController:FireUltimate()
 		Sender = LocalPlayer,
 		Combat = {
 			FoodName = self.CurrentFood,
-			isUltimate = true,
+			Ultimate = true,
 		},
 		Projectile = {	
 			Owner = LocalPlayer,
@@ -294,7 +294,7 @@ function FoodCombatController:FireUltimate()
 				Sender = LocalPlayer,
 				Combat = {
 					FoodName = self.CurrentFood,
-					isUltimate = true,
+					Ultimate = true,
 				},
 				Projectile = {
 					Id = Projectile.Id,

@@ -36,6 +36,8 @@ function EnergyManager:Init(Core)
 	self.CombatEvent = Core:Get("SharedRemotes"):GetEvent("CombatEvent")
 
 	self.FoodCombatManager = Core:Get("FoodCombatManager")
+
+	self._heartbeatConnection = nil
 end
 
 function EnergyManager:Start(Core)
@@ -66,8 +68,8 @@ function EnergyManager:Start(Core)
 	local ActivePlayers = self.GameStatusManager.ActivePlayers
 	print(ActivePlayers)
 
-	RunService.Heartbeat:Connect(function(deltaTime)
-		for _, plr in self.GameStatusManager.ActivePlayers do
+	self._heartbeatConnection = RunService.Heartbeat:Connect(function(deltaTime)
+		for _, plr in ipairs(self.GameStatusManager.ActivePlayers) do
 			local CurrentFood = self.PlayerEnergyData[plr] and self.PlayerEnergyData[plr].CurrentFood
 
 			if not CurrentFood then
@@ -102,6 +104,13 @@ function EnergyManager:Start(Core)
 			end
 		end
 	end)
+end
+
+function EnergyManager:Stop()
+	if self._heartbeatConnection then
+		self._heartbeatConnection:Disconnect()
+		self._heartbeatConnection = nil
+	end
 end
 
 --gives food combat manager the thumbs-up

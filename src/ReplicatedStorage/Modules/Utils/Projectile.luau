@@ -43,8 +43,9 @@ ProjectileFolder.Parent = workspace
 local ActiveProjectiles = {}
 
 -- Physics simulation heartbeat
+
 RunService.Heartbeat:Connect(function(deltaTime)
-	for id, proj in pairs(ActiveProjectiles) do
+    for id, proj in pairs(ActiveProjectiles) do
 		if not proj.Active then 
 			continue 
 		end
@@ -222,9 +223,7 @@ end
 function Projectile:Fire()
 	self.Active = true
 	self.StartTime = tick()
-	--ActiveProjectiles[self.Id] = self --uncomment this when done testing replication
-
-	table.insert(ActiveProjectiles, self)
+	ActiveProjectiles[self.Id] = self
 
 	self.OnFire:Fire(self)
 end
@@ -320,9 +319,7 @@ function Projectile:Destroy()
 	end
 	
 	-- Remove from active projectiles
-	--ActiveProjectiles[self.Id] = nil
-
-	table.remove(ActiveProjectiles, table.find(ActiveProjectiles, self))
+	ActiveProjectiles[self.Id] = nil
 	
 	-- Clean up signals
 	self.OnHit:Destroy()

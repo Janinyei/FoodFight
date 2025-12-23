@@ -7,7 +7,6 @@ local BananaServer = {}
 local Debris = game:GetService("Debris")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local RunService = game:GetService("RunService")
 
 local Modules = ReplicatedStorage.Modules
 --Imports--
@@ -24,6 +23,7 @@ function BananaServer:Init(Core)
 end
 
 function BananaServer:OnFireNormal(player, data)
+	self.CombatEvent:FireExcept(true, { player }, "Fire", data)
 end
 
 function BananaServer:OnHitNormal(player, data)

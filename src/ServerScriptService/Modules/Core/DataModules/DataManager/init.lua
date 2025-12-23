@@ -15,22 +15,24 @@ local PlayerStore = nil
 
 function module:Init(Core)
 	PlayerStore = ProfileStore.New("TestingData", self.DefaultData)
+	ProfileStore.OnError:Connect(function(message, store_name, profile_key)
+		warn(`[DataManager]: ProfileStore error (STORE:{store_name}; KEY:{profile_key}) - {message}`)
+	end)
+
 	self.Profiles = {}
 	self.DataLoaded = Signal.new()
 	self.DataEvent = Core:Get("SharedRemotes"):GetEvent("DataEvent")
 
 	local function PlayerAdded(player)
-		-- Start a profile session for this player's data:
-		local profile = PlayerStore.Mock:StartSessionAsync(`{player.UserId}`, {
+		local profile = PlayerStore:StartSessionAsync(`{player.UserId}`, {
 			Cancel = function()
 				return player.Parent ~= Players
 			end,
 		})
 
-		-- Handling new profile session or failure to start it:
 		if profile ~= nil then
-			profile:AddUserId(player.UserId) -- GDPR compliance
-			profile:Reconcile() -- Fill in missing variables from PROFILE_TEMPLATE (optional)
+			profile:AddUserId(player.UserId)
+			profile:Reconcile()
 
 			profile.OnSessionEnd:Connect(function()
 				self.Profiles[player] = nil
@@ -44,16 +46,40 @@ function module:Init(Core)
 				self.DataEvent:Fire(true, player, "your data has loaded")
 				self.DataLoaded:Fire(player, profile.Data)
 			else
-				-- The player has left before the profile session started
 				profile:EndSession()
 			end
 		else
-			-- This condition should only happen when the Roblox server is shutting down
-			player:Kick(`Profile load fail - Please rejoin`)
+			warn(`Profile load failed for {player.DisplayName}, retrying...`)
+			task.wait(2)
+			profile = PlayerStore:StartSessionAsync(`{player.UserId}`, {
+				Cancel = function()
+					return player.Parent ~= Players
+				end,
+			})
+
+			if profile ~= nil then
+				profile:AddUserId(player.UserId)
+				profile:Reconcile()
+
+				profile.OnSessionEnd:Connect(function()
+					self.Profiles[player] = nil
+					player:Kick(`Profile session end - Please rejoin`)
+				end)
+
+				if player.Parent == Players then
+					self.Profiles[player] = profile
+					print(`Profile loaded for {player.DisplayName}!`)
+					self.DataEvent:Fire(true, player, "your data has loaded")
+					self.DataLoaded:Fire(player, profile.Data)
+				else
+					profile:EndSession()
+				end
+			else
+				player:Kick(`Profile load fail - Please rejoin`)
+			end
 		end
 	end
 
-	-- In case Players have joined the server earlier than this script ran:
 	for _, player in Players:GetPlayers() do
 		task.spawn(PlayerAdded, player)
 	end
