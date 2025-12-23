@@ -264,8 +264,6 @@ function GrapesClient:OnUltimateActivated()
 		local Top = grapes:FindFirstChild("Top")
 		local Weld = Top and Top:FindFirstChild("GrapesWeld")
 		
-		self.UltShake = self.CameraController:ShakeSustain("HandheldCamera")
-		
 		if not self.RotationConn and Weld then
 			self.BaseWeldC0 = self.BaseWeldC0 or Weld.C0
 			local baseC0 = self.BaseWeldC0
@@ -301,11 +299,6 @@ function GrapesClient:OnUltimateDeactivated()
 	local grapes = self:GetHeldGrapes()
 	if grapes then
 		task.spawn(function()
-			if self.UltShake then
-				self.UltShake:StartFadeOut(0.5)
-				self.UltShake = nil
-			end
-
 			local fadeInfo = TweenInfo.new(0.5, Enum.EasingStyle.Sine, Enum.EasingDirection.Out)
 			local lastTween
 			for _, v in ipairs(grapes:GetDescendants()) do
