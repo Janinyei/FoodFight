@@ -53,8 +53,19 @@ function GameStatusManager:ReturnToLobby(player)
 	
 	local hrp = player.Character:FindFirstChild("HumanoidRootPart")
 	if not hrp then return end	
-	
-	hrp.CFrame = workspace.Spawn.SpawnLocation.CFrame
+
+	local spawnPart = nil
+	if workspace:FindFirstChild("Spawn") and workspace.Spawn:FindFirstChild("SpawnLocation") then
+		spawnPart = workspace.Spawn:FindFirstChild("SpawnLocation")
+	elseif workspace:FindFirstChild("SpawnLocation") then
+		spawnPart = workspace:FindFirstChild("SpawnLocation")
+	end
+
+	if spawnPart and spawnPart:IsA("BasePart") then
+		hrp.CFrame = spawnPart.CFrame
+	else
+		hrp.CFrame = LOBBY_CFRAME
+	end
 	hrp.Anchored = true
 	self.GameStatusEvent:Fire(true, player, "SetState", {State = "Lobby", Position = LOBBY_CFRAME.Position})
 table.remove(self.ActivePlayers, table.find(self.ActivePlayers, player))

@@ -58,8 +58,27 @@ function ProjectileController:Init(Core)
 end
 
 function ProjectileController:Start()
-	--setup replication event here to handle replicating projectiles
-	--self:StartReplicationListener()
+	-- Setup replication listener to respond to server events (Destroyed, Bounce, etc.)
+	self.ProjectileEvent:Connect(function(action, ProjData)
+		if action == "Destroyed" then
+			local ProjectileId = ProjData.ProjectileId
+			if LocalProjectiles[ProjectileId] then
+				LocalProjectiles[ProjectileId]:Destroy()
+				LocalProjectiles[ProjectileId] = nil
+			elseif ReplicatedProjectiles[ProjectileId] then
+				ReplicatedProjectiles[ProjectileId]:Destroy()
+				ReplicatedProjectiles[ProjectileId] = nil
+			end
+		elseif action == "Bounce" then
+			local ProjectileId = ProjData.Id
+			if ReplicatedProjectiles[ProjectileId] then
+				local projectile = ReplicatedProjectiles[ProjectileId]
+				projectile.Velocity = ProjData.Velocity
+				projectile.Position = ProjData.Position
+				projectile.BounceCount = ProjData.BounceCount or projectile.BounceCount
+			end
+		end
+	end)
 end
 
 --I might refactor this to  CreateProjectile instead
@@ -97,6 +116,11 @@ function ProjectileController:FireProjectile(Obj: Model | BasePart, ProjectileDa
 
 	-- Fire projectile
 	NewProj:Fire()
+
+	NewProj.OnDestroyed:Connect(function()
+		LocalProjectiles[NewProj.Id] = nil
+		ReplicatedProjectiles[NewProj.Id] = nil
+	end)
 
 	self.TrailsController:LoadTrail(NewProj.Model)
 

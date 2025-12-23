@@ -8,7 +8,11 @@ return {
         Acceleration = Vector3.new(0, -40, 0),
         MaxBounces = 0,
         Restitution = 1,
-        DestroyOnDamage = true,
+        DestroyOnHit = true,
+    },
+
+    Ultimate = {
+        DestroyOnHit = true,
     },
 
     Combat = {
@@ -18,7 +22,7 @@ return {
     },
 
     Energy = {
-        BoostRate = 100, --how much is increased per second passively
+        BoostRate = 500, --how much is increased per second passively
         AbilityCost = 100, --how much is drained every ability activation
         MaxEnergy = 1000 , --maximum energy required for ability activation
     }

@@ -15,7 +15,8 @@ export type ProjectileData = {
 	Update: ((deltaTime: number, projectile: any) -> any)?,
 	RaycastParams: RaycastParams,
 	IsReplicated: boolean?,
-	AngularVelocity: Vector3? -- Added to type
+	AngularVelocity: Vector3?,
+	DestroyOnHit: boolean?
 }
 
 local Projectile = {}
@@ -25,7 +26,6 @@ Projectile.__index = Projectile
 local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local HttpService = game:GetService("HttpService")
-local Debris = game:GetService("Debris")
 
 --Modules--
 local Modules = ReplicatedStorage.Modules
@@ -45,7 +45,7 @@ local ActiveProjectiles = {}
 -- Physics simulation heartbeat
 
 RunService.Heartbeat:Connect(function(deltaTime)
-    for id, proj in pairs(ActiveProjectiles) do
+    for _, proj in pairs(ActiveProjectiles) do
 		if not proj.Active then 
 			continue 
 		end
@@ -86,16 +86,13 @@ RunService.Heartbeat:Connect(function(deltaTime)
 			end
 			
 			-- Handle bouncing
-			if proj.BounceCount < proj.MaxBounces then
+			if not proj.DestroyOnHit and proj.BounceCount < proj.MaxBounces then
 				print(proj.BounceCount)
 				proj:Bounce(hitResult.Normal)
 				proj.BounceCount += 1
 			else
-				-- Max bounces reached, destroy projectile
-
-				proj.Active = false
-				--proj:Destroy()
-
+				-- Max bounces reached or DestroyOnHit is true, destroy projectile
+				proj:Destroy()
 			end
 		end
 	end
@@ -115,6 +112,7 @@ function Projectile.new(data: ProjectileData)
 	self.Active = false
 	self.Lifetime = data.Lifetime or 20
 	self.IncludeModelInCleanup = data.IncludeModelInCleanup or true
+	self.DestroyOnHit = data.DestroyOnHit or false
 
 	self.MaxHits = data.MaxHits or 999 --determines how many times a hit can register on an attacked character
 	self.CurrentHits = 0
@@ -304,18 +302,20 @@ end
 
 
 function Projectile:Destroy()
+	if self.Destroyed then
+		return
+	end
+	self.Destroyed = true
+	
 	-- Set inactive first
 	self.Active = false
 	
 	-- Fire destroyed event
 	self.OnDestroyed:Fire(self)
 	
-	-- Clean up model
-	if self.Model and self.IncludeModelInCleanup == false then --users can choose whether they simply want to detach the model or destroy it
+	if self.Model then
 		self.Model:Destroy()
 		self.Model = nil
-
-
 	end
 	
 	-- Remove from active projectiles
@@ -325,8 +325,6 @@ function Projectile:Destroy()
 	self.OnHit:Destroy()
 	self.OnDestroyed:Destroy()
 	self.OnFire:Destroy()
-
-	
 end
 
 return Projectile

@@ -9,8 +9,12 @@ return {
         MaxBounces = 5,
         MaxHits = 1,
         Restitution = 0.8,
-        DestroyOnDamage = true,
+        DestroyOnHit = true,
         IncludeModelInCleanup = false
+    },
+
+    Ultimate = {
+        DestroyOnHit = true
     },
 
     Combat = {
@@ -20,7 +24,7 @@ return {
     },
 
     Energy = {
-        BoostRate = 100, --how much is increased per second passively
+        BoostRate = 500, --how much is increased per second passively
         AbilityCost = 100, --how much is drained every ability activation
         MaxEnergy = 1000 , --maximum energy required for ability activation
     }

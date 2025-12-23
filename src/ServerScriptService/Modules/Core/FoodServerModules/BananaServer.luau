@@ -45,6 +45,12 @@ function BananaServer:OnHitUltimate(player, data)
 		self.FoodCombatManager:DamageCharacter(character, self.Config.Combat.UltimateDamage or self.Config.Combat.BaseDamage * 2, player)
 	end
 
+	local projId = data.Projectile and data.Projectile.Id
+	if projId then
+		self.ProjectileManager:RemoveProjectile(projId)
+		self.ProjectileManager.ProjectileEvent:Fire(true, "Destroyed", { ProjectileId = projId })
+	end
+
 	self:SpawnBananaPeel(data, player)
 end
 

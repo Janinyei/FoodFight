@@ -199,7 +199,8 @@ function FoodCombatController:FireNormal()
 			Acceleration = ProjectileConfig.Acceleration,
 			MaxBounces = ProjectileConfig.MaxBounces,
 			RaycastParams = self.ProjectileController.RaycastParams,
-			MaxHits = ProjectileConfig.MaxHits
+			MaxHits = ProjectileConfig.MaxHits,
+			DestroyOnHit = ProjectileConfig.DestroyOnHit or false
 		}
 	}
 
@@ -288,7 +289,8 @@ function FoodCombatController:FireUltimate()
 			Acceleration = ProjectileConfig.Acceleration,
 			MaxBounces = ProjectileConfig.MaxBounces,
 			RaycastParams = self.ProjectileController.RaycastParams,
-			MaxHits = ProjectileConfig.MaxHits
+			MaxHits = ProjectileConfig.MaxHits,
+			DestroyOnHit = (FoodModule.Config.Ultimate and FoodModule.Config.Ultimate.DestroyOnHit) or false
 		}
 	}
 
@@ -359,16 +361,6 @@ function FoodCombatController:Fire()
 	self:HandleNormalAttack()
 end
 
---Attack Hit--
-function FoodCombatController:OnHit(player, data)
-	local AttackerFood = data.Combat.FoodName
-	local FoodClientModule = self.FoodModules[AttackerFood]
-	if not FoodClientModule.OnHit then
-		return
-	end
-	
-	FoodClientModule:OnHit(data)
-end
 
 -- Replication Functions--
 --on attack replicated
