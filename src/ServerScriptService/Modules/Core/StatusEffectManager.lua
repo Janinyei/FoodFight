@@ -35,24 +35,30 @@ function StatusEffectManager:Start()
     end)
 end
 
-function StatusEffectManager:ApplyEffect(plr: Player, effectName: string)	
+function StatusEffectManager:ApplyEffect(plr: Player, effectName: string, duration: number?)	
     local effectTable
 
-	if self.EffectedPlayers[plr] then
-		effectTable = self.EffectedPlayers[plr]
-	else
-		self.EffectedPlayers[plr] = {}
+    if self.EffectedPlayers[plr] then
         effectTable = self.EffectedPlayers[plr]
-	end
+    else
+        self.EffectedPlayers[plr] = {}
+        effectTable = self.EffectedPlayers[plr]
+    end
 
-	if table.find(effectTable, effectName) ~= nil then
-		return
-	end
+    if table.find(effectTable, effectName) ~= nil then
+        return
+    end
 
-	table.insert(effectTable, effectName)
+    table.insert(effectTable, effectName)
 
     self.StatusEffectApplied:Fire(plr, effectName)
     self.StatusEffectEvent:Fire(true, plr, effectName, true)
+    
+    if duration then
+        task.delay(duration,function()
+             self:RemoveEffect(plr, effectName)
+        end)
+    end
 end
 
 function StatusEffectManager:RemoveEffect(plr: Player, effectName: string)

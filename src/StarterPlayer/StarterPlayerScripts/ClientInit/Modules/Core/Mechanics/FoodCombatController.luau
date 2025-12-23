@@ -35,7 +35,7 @@ function FoodCombatController:Init(Core)
 	self.InputController = Core:Get("InputController")
 
 	--local variables
-	self.UltimateActivated = false
+	self.IsUltimateActive = false
 	self.CanUltimate = false
 	self.CurrentEnergy = 0 -- on the server after using a move that costs energy, use the remote to update this value in order to make gameplay smoother, so the client doesn't rely on the server-sided check
 	self.LastNormalFired = tick()
@@ -151,7 +151,7 @@ function FoodCombatController:HandleUltimateActivation()
 	local CanActivateUlt = self.CombatEvent:Invoke(10, "ActivateUltimate")
 
 	if CanActivateUlt then
-		self.UltimateActivated = true
+		self.IsUltimateActive = true
 		self.LastUltimateFired = tick()
 		
 		local FoodModule = self.FoodModules[self.CurrentFood]
@@ -164,7 +164,7 @@ function FoodCombatController:HandleUltimateActivation()
 end
 
 function FoodCombatController:HandleNormalAttack()
-	if self.UltimateActivated then
+if self.IsUltimateActive then
 		self:FireUltimate()
 		return
 	end
@@ -235,6 +235,23 @@ function FoodCombatController:FireNormal()
 			}
 
 			FoodModule:OnHitNormal(LocalPlayer, hitData)
+			self.CombatEvent:Fire(true, "Hit", hitData)
+		else
+			local hitData = {
+				Sender = LocalPlayer,
+				Combat = {
+					FoodName = self.CurrentFood,
+					Ultimate = false,
+				},
+				Projectile = {
+					Id = Projectile.Id,
+					HitResult = {
+						Instance = HitResult.Instance,
+						Position = HitResult.Position,
+						Normal = HitResult.Normal,
+					},
+				},
+			}
 			self.CombatEvent:Fire(true, "Hit", hitData)
 		end
 	end)
@@ -308,6 +325,24 @@ function FoodCombatController:FireUltimate()
 
 			FoodModule:OnHitUltimate(LocalPlayer, hitData)
 			self.CombatEvent:Fire(true, "Hit", hitData)
+		else
+			-- Always send the Hit event to the server even if client module doesn't handle it
+			local hitData = {
+				Sender = LocalPlayer,
+				Combat = {
+					FoodName = self.CurrentFood,
+					Ultimate = true,
+				},
+				Projectile = {
+					Id = Projectile.Id,
+					HitResult = {
+						Instance = HitResult.Instance,
+						Position = HitResult.Position,
+						Normal = HitResult.Normal,
+					},
+				},
+			}
+			self.CombatEvent:Fire(true, "Hit", hitData)
 		end
 	end)
 
@@ -371,9 +406,9 @@ function FoodCombatController:StartReplication()
 			self:OnHitReplicated(data)
 		elseif action == "DeactivateUltimate" then
 			print("ultimate deactivated from client")
-			self.UltimateActivated = false
+			self.IsUltimateActive = false
 			
-			local FoodModule = self.FoodModules[data.Combat.FoodName]
+			local FoodModule = self.FoodModules[self.CurrentFood]
 			if FoodModule and FoodModule.OnUltimateDeactivated then
 				FoodModule:OnUltimateDeactivated()
 			end

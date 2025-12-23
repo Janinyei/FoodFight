@@ -38,6 +38,11 @@ function BananaClient:OnFire()
 print("custom banana on fire stuff that's additional, not overriding")
 end
 
+function BananaClient:OnUltimateActivated()
+end
+
+function BananaClient:OnUltimateDeactivated()
+end
 
 function BananaClient:Start() end
 

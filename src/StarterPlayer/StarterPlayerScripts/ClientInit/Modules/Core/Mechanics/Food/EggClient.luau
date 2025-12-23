@@ -59,7 +59,7 @@ function EggClient:Fire()
 
 	--test representation of custom firing functionality
 
-	if self.FoodCombatController.UltimateActivated then
+	if self.FoodCombatController.IsUltimateActive then
 		for i = 1, 3 do
 			self:ShootEgg(true)
 			task.wait(0.01)
@@ -75,6 +75,12 @@ end
 --different form Fire, OnFire consists of additional functionality. If you want to overwrite the fire function, then use Fire instead in the client module
 function EggClient:OnFire(data)
 	--use for vfx possibily
+end
+
+function EggClient:OnUltimateActivated()
+end
+
+function EggClient:OnUltimateDeactivated()
 end
 
 function EggClient:ShootEgg(Spread: boolean?)
