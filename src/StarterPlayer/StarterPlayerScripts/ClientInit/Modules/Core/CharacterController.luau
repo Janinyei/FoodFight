@@ -282,11 +282,17 @@ function CharacterController:_vaultUpdate(dt)
 	end
 end
 
+--sliding
+
 function CharacterController:_activateSlide()
 	
 end
 
 function CharacterController:_slideUpdate(dt)
+	
+end
+
+function CharacterController:_deactivateSlide()
 	
 end
 
