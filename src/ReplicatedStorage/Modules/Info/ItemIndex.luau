@@ -60,7 +60,7 @@ InventoryIndex.Food = {
 	},
 
 	["Grapes"] = {
-		Name = "Burger",
+		Name = "Grapes",
 		Type = "Food",
 		Price = 0,
 		Rarity = "Rare",
