@@ -148,6 +148,11 @@ function FoodCombatController:StopAim()
 end
 
 function FoodCombatController:HandleUltimateActivation()
+	if self.IsUltimateActive then
+		self.CombatEvent:Fire(true, "DeactivateUltimate")
+		return
+	end
+
 	local CanActivateUlt = self.CombatEvent:Invoke(10, "ActivateUltimate")
 
 	if CanActivateUlt then

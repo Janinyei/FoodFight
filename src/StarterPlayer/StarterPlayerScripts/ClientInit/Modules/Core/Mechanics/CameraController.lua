@@ -21,6 +21,7 @@ local FoodConfigs = Modules.Info.FoodCombatConfigs
 local Modules = ReplicatedStorage.Modules
 local Spring = require(Modules.Utils.Spring)
 local Janitor = require(Modules.Utils.Janitor)
+local CameraShaker = require(Modules.Utils.CameraShaker)
 
 -- Variables
 local LocalPlayer = Players.LocalPlayer
@@ -104,12 +105,16 @@ function CameraController:Init(Core)
 
 	--janitor--
 	self.ShiftLockJanitor = Janitor.new()
+
+	-- camera shaker --
+	self.Shaker = CameraShaker.new(Enum.RenderPriority.Camera.Value, function() end)
+
 end
 
 function CameraController:Start()
 	
 
-	self.InputController:SetActionCallback("ToggleShiftLock", function(state, inputObj)
+	self.InputController:SetActionCallback("ToggleShiftLock", function(state, _)
 		if state == Enum.UserInputState.Begin then
 			self:ToggleShiftLock()
 		end
@@ -126,11 +131,13 @@ function CameraController:Start()
 	
 	
 		if  self.Aiming then --allows for stable aiming
-		Camera.CFrame = Camera.CFrame * CFrame.new(self.OffsetSpring.Position) --doesn't use camera lerp
-	else
-		Camera.CFrame = ((Camera.CFrame - Camera.CFrame.Position) + CameraLerpSpring.Position) * CFrame.new(self.OffsetSpring.Position)		
-		
+			Camera.CFrame = Camera.CFrame * CFrame.new(self.OffsetSpring.Position)
+		else
+			Camera.CFrame = ((Camera.CFrame - Camera.CFrame.Position) + CameraLerpSpring.Position) * CFrame.new(self.OffsetSpring.Position)		
 		end
+
+		local shakeCF = self.Shaker:Update(dt)
+		Camera.CFrame = Camera.CFrame * shakeCF
 	end))
 end
 
@@ -167,7 +174,7 @@ end
 
 function CameraController:SetSpectate(IsSpectating: boolean, Position: Vector3?)
 	if IsSpectating and Position then
-		Camera.CameraType = Enum.CameraType.Scriptable
+		 Camera.CameraType = Enum.CameraType.Scriptable
 		local cameraPos = Position + Vector3.new(100, 80, 100)
 		Camera.CFrame = CFrame.lookAt(cameraPos, Position)
 	else
@@ -178,6 +185,40 @@ function CameraController:SetSpectate(IsSpectating: boolean, Position: Vector3?)
 				Camera.CameraSubject = humanoid
 			end
 		end
+	end
+end
+
+function CameraController:Shake(presetName: string | table | number, magnitude: number?, roughness: number?, fadeInTime: number?, fadeOutTime: number?, posInfluence: Vector3?, rotInfluence: Vector3?)
+	if type(presetName) == "string" then
+		local preset = CameraShaker.Presets[presetName]
+		if preset then
+			self.Shaker:Shake(preset)
+		end
+	elseif type(presetName) == "table" then
+		self.Shaker:Shake(presetName)
+	else
+		local actualMag = type(presetName) == "number" and presetName or magnitude
+		local actualRough = type(presetName) == "number" and magnitude or roughness
+		local actualFadeIn = type(presetName) == "number" and roughness or fadeInTime
+		local actualFadeOut = type(presetName) == "number" and fadeInTime or fadeOutTime
+		
+		if actualMag then
+			local instance = self.Shaker:ShakeOnce(
+				actualMag, 
+				actualRough or 1, 
+				tonumber(actualFadeIn) or 0.1, 
+				tonumber(actualFadeOut) or 0.5
+			)
+			instance.PositionInfluence = posInfluence or Vector3.new(0, 0, 0)
+			instance.RotationInfluence = rotInfluence or Vector3.new(0.4, 0.4, 0.4)
+		end
+	end
+end
+
+function CameraController:ShakeSustain(presetName: string | table)
+	local preset = type(presetName) == "string" and CameraShaker.Presets[presetName] or presetName
+	if preset then
+		return self.Shaker:ShakeSustain(preset)
 	end
 end
 

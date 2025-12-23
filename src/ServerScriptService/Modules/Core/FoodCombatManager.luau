@@ -4,7 +4,6 @@
 local FoodCombatManager = {}
 
 --Services--
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ServerScriptService = game:GetService("ServerScriptService")
 local Players = game:GetService("Players")
 
@@ -79,6 +78,8 @@ function FoodCombatManager:Start()
 						
 		elseif action == "ActivateUltimate" then
 			return self:ActivateUltimate(player)
+		elseif action == "DeactivateUltimate" then
+			self:DeactivateUltimate(player)
 		end
 	end)
 end
