@@ -27,7 +27,7 @@ return {
     },
 
     Energy = {
-        BoostRate = 500, --how much is increased per second passively
+        BoostRate = 100, --how much is increased per second passively
         AbilityCost = 100, --how much is drained every ability activation
         MaxEnergy = 1000 , --maximum energy required for ability activation
     }

@@ -89,7 +89,7 @@ function GrapesClient:Equip()
 	return Clone
 end
 
-function GrapesClient:PickRandomBall()
+function GrapesClient:GetBall()
 	local grapes = self:GetHeldGrapes()
 	if not grapes then return nil end
 	
@@ -116,7 +116,7 @@ function GrapesClient:FireNormal()
 			math.random(-100, 100) / 100 * Spread
 		)).Unit
 
-		local projModel = self:PickRandomBall()
+		local projModel = self:GetBall()
 		if projModel then
 			projModel = projModel:Clone()
 		else
@@ -186,7 +186,7 @@ function GrapesClient:FireUltimate()
 				math.random(-100, 100) / 100 * Spread
 			)).Unit
 
-			local ball = self:PickRandomBall()
+			local ball = self:GetBall()
 			local GrapeProjectileModel
 			local StartOrigin = Origin
 
