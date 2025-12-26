@@ -108,5 +108,30 @@ return {
     end,
 
 
-   Lerp = function (a, b, t) return a + (b - a) * t end
+   Lerp = function (a, b, t) return a + (b - a) * t end,
+
+   --returns x and z axis vector
+   V3Flat = function(v : Vector3) 
+    return v * Vector3.new(1,0,1)
+   end,
+
+   --returns just y axis vector
+
+   V3Pole = function(v : Vector3)
+       return v * Vector3.yAxis
+   end,
+
+   --clamps vector magnitude
+
+   clampVector = function(vec : Vector3, minMagnitude : number, maxMagnitude : number)
+    local magnitude = vec.Magnitude
+    if magnitude < minMagnitude then
+        return vec.Unit * minMagnitude
+    elseif magnitude > maxMagnitude then
+        return vec.Unit * maxMagnitude
+    else
+        return vec
+    end
+   end,
+   
 }

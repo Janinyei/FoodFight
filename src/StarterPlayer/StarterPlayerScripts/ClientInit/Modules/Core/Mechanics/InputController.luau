@@ -24,7 +24,15 @@ function InputController:Init(Core)
 		},
 		["UpAction"] = {
 					["Inputs"] = {Enum.KeyCode.Space, Enum.KeyCode.ButtonA}
-				}
+				},
+
+			["Dash"] = {
+				["Inputs"] = {Enum.KeyCode.Q}
+			},
+
+			["DownAction"] = {
+							["Inputs"] = {Enum.KeyCode.LeftShift}
+						}
 	
 		-- Add more here
 	}
