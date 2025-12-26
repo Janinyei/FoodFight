@@ -5,7 +5,7 @@ local InputController = {}
 
 -- Services
 local CAS = game:GetService("ContextActionService")
-local UserInputService = game:GetService("UserInputService")
+local UIS = game:GetService("UserInputService")
 
 function InputController:Init(Core)
 	self.Core = Core
@@ -85,4 +85,20 @@ end
 function InputController:AttachMobileButton(ActionName, MobileButton)
 	--adds mobile button to action
 end
+
+
+--will eventually have to implement mobile functionality
+function InputController:IsActionKeyDown(ActionName :  string) --checks if a key is being held down for specific action
+
+	local isKeydown = false
+	for _, keycode in self.Binds[ActionName].Inputs do
+		if UIS:IsKeyDown(keycode) then
+			isKeydown = true
+			break
+		end
+	end
+
+	return isKeydown
+end
+
 return InputController

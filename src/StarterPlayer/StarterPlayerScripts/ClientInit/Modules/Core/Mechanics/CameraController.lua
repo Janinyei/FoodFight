@@ -122,7 +122,7 @@ function CameraController:Start()
 
 	local CameraLerpSpring = self.CameraLerpSpring
 	--test.Damper = 0.65
-	CameraLerpSpring.Speed = 20
+	CameraLerpSpring.Speed = 100
 
 	--constant camera spring update
 	self.ShiftLockJanitor:Add(RunService.RenderStepped:Connect(function(dt) --probably don't need a janitor since this isn't being cleaned up but you never know
