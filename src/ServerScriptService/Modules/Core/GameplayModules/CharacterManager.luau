@@ -12,6 +12,7 @@ local UtilFunctions = require(Modules.Utils.Functions)
 
 function CharacterManager:Init(Core)
 	self.StatusEffectManager = Core:Get("StatusEffectManager")
+	Players.RespawnTime = 1000000
 
 	Players.PlayerAdded:Connect(function(player)
 		player.CharacterAdded:Connect(function(char)
@@ -19,12 +20,25 @@ function CharacterManager:Init(Core)
 			local hum = char:WaitForChild("Humanoid")
 			hum.BreakJointsOnDeath = false
 			self:_setupRagdollConstraints(char)
+			
+			local SharedRemotes = Core:Get("SharedRemotes")
+			local CombatEvent = SharedRemotes:GetEvent("CombatEvent")
 
 			hum.Died:Connect(function()
 				self:EnableRagdoll(char)
 
 				hum.RootPart:ApplyImpulse(hum.RootPart:GetMass() * Vector3.yAxis * 500)
 				hum.RootPart:ApplyAngularImpulse(hum.RootPart:GetMass() * Vector3.one * math.random(100, 500))
+
+				local CreatorTag = hum:FindFirstChild("creator")
+				local Killer = nil
+				if CreatorTag and CreatorTag.Value then
+					Killer = CreatorTag.Value
+				end
+
+				CombatEvent:Fire(true, player, "YouDied", {
+					Killer = Killer
+				})
 			end)
 		end)
 	end)

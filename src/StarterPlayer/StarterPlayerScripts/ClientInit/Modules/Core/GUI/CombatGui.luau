@@ -45,9 +45,9 @@ end
 function CombatGui:Start()
 	--Signals--
 	
-		self.DamageDealt = self.FoodCombatController.DamageDealt
-		self.DamageReceived = self.FoodCombatController.DamageReceived
-		self.PlayerEliminated = nil --maybe lol
+	self.DamageDealt = self.FoodCombatController.DamageDealt
+	self.DamageReceived = self.FoodCombatController.DamageReceived
+	self.PlayerEliminated = nil --maybe lol
 
 	self.DamageDealt:Connect(function(data)
 		print(data)
