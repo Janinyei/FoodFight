@@ -68,14 +68,14 @@ function CharacterController:SetupCharacter(char: Model)
 		--Movement--
 		walkAlpha = 8, --smooth walking
 		baseSpeed = 20,
-		maxSpeed = 30,
+		maxSpeed = 30, --max walkspeed
 		runAccel = 2,
 		moveVelocity = Vector3.zero,
 
 		--crouching--
 		isCrouching = false,
 		crouchHeight = -2,
-		crouchSpeed = 16, --crouch walkspeed
+		crouchSpeed = 4, --crouch walkspeed
 		crouchTransitionSpeed = 5,
 
 		--tilting/rotating
@@ -266,6 +266,7 @@ function CharacterController:_stopCrouch()
 
 	if not ceilingRay then
 		self.ParkourConfig.isCrouching = false
+		self.Humanoid.WalkSpeed = self.ParkourConfig.baseSpeed
 	else
 		-- If blocked, stay crouching (you could add an "Auto-Stand" flag here later)
 		self.ParkourConfig.isCrouching = true
@@ -293,7 +294,7 @@ function CharacterController:_updateMovement(dt)
 		--hum:Move(ParkourConfig.moveVelocity)
 		local targetHeight = self.ParkourConfig.isCrouching and self.ParkourConfig.crouchHeight or 0
 		--hip height adjustment
-		self.Humanoid.HipHeight = UtilFunctions.Lerp(self.Humanoid.HipHeight, targetHeight, dt * self.crouchTransitionSpeed)
+		self.Humanoid.HipHeight = UtilFunctions.Lerp(self.Humanoid.HipHeight, targetHeight, dt * self.ParkourConfig.crouchTransitionSpeed)
 
 		local targetWalkspeed = ParkourConfig.isCrouching and ParkourConfig.crouchSpeed or ParkourConfig.baseSpeed
 		--walkspeed acceleration--
@@ -348,7 +349,6 @@ function CharacterController:_updateHRPOrientation(dt)
 end
 
 function CharacterController:_humanoidDied()
-
 	--self.HRP:ApplyImpulse(self.HRP:GetMass() * Vector3.yAxis * 500)
 	--self.HRP:ApplyAngularImpulse(self.HRP:GetMass() * Vector3.one * math.random(100, 500))
 end
