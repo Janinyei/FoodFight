@@ -82,7 +82,15 @@ function GameStatusManager:RequestJoin(player)
 
 	print("player is now active")
 	local spawnCFrame = GameManager:GetSpawnPoint()
-	self:SpawnInGame(player, spawnCFrame)
+	
+	if not player.Character or player.Character.Humanoid.Health <= 0 then
+		player:LoadCharacter()
+		
+		player.CharacterAdded:Wait()
+		self:SpawnInGame(player, spawnCFrame)
+	else
+		self:SpawnInGame(player, spawnCFrame)
+	end
 end
 
 function GameStatusManager:SpawnInGame(player, spawnCFrame)

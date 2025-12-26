@@ -105,6 +105,22 @@ function FoodCombatManager:DamageCharacter(TargetCharacter: Model, Amount: numbe
 	end
 
 	--handle damage
+	--tag humanoid logic--
+	if Attacker then
+		local CreatorTag = Humanoid:FindFirstChild("creator")
+		if CreatorTag and CreatorTag.Value ~= Attacker then
+			CreatorTag:Destroy()
+			CreatorTag = nil
+		end
+
+		if not CreatorTag then
+			CreatorTag = Instance.new("ObjectValue")
+			CreatorTag.Name = "creator"
+			CreatorTag.Value = Attacker
+			CreatorTag.Parent = Humanoid
+		end
+	end
+
 	Humanoid:TakeDamage(Amount)
 
 	--fire damage dealt event to attacker & damage received to victim(s)
