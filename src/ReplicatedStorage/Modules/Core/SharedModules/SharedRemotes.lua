@@ -16,7 +16,8 @@ function SharedRemotes:Init()
 		"GameStatusEvent",
 		"CombatEvent",
 		"CharacterEvent",
-		"StatusEffectEvent"
+		"StatusEffectEvent",
+		"AudioEvent"
 	}
 
 	self.Events = nil
