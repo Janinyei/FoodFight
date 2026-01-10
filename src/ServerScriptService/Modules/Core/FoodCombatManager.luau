@@ -227,8 +227,6 @@ function FoodCombatManager:IsUltimate(player)
 end
 
 function FoodCombatManager:ProcessDestroyableHit(attacker: Player, model: Model, hitPosition: Vector3)
-	print(string.format("[FoodCombatManager] Barrel hit at %s by %s", tostring(hitPosition), attacker.Name))
-
 	self.CombatEvent:Fires(true, "DestroyableHit", {
 		Type = "Barrel",
 		Position = hitPosition,
