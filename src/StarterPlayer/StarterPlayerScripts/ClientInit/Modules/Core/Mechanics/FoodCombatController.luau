@@ -51,6 +51,7 @@ function FoodCombatController:Init(Core)
 	self.DamageReceived = Signal.new()
 	self.UltimateActivated = Signal.new()
 	self.UltimateDeactivated = Signal.new()
+	self.Fired = Signal.new()
 
 	--loading food modules--
 	self.FoodModules = {}
@@ -221,6 +222,7 @@ function FoodCombatController:FireNormal()
 	print(Projectile:GetData())
 
 	self.CombatEvent:Fire(true, "Fire", FireData)
+	self.Fired:Fire(FireData)
 
 	Projectile.OnHit:Connect(function(HitResult)
 		if FoodModule.OnHitNormal then
@@ -311,6 +313,7 @@ function FoodCombatController:FireUltimate()
 	print(Projectile:GetData())
 
 	self.CombatEvent:Fire(true, "Fire", FireData)
+	self.Fired:Fire(FireData)
 
 	Projectile.OnHit:Connect(function(HitResult)
 		if FoodModule.OnHitUltimate then

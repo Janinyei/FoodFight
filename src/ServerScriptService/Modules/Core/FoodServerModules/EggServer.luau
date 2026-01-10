@@ -134,7 +134,11 @@ local function SpawnChickenNPC(self: typeof(EggServer), player: Player, data)
 					)
 
 					for _, hitCharacter in hitCharacters do
-						self.FoodCombatManager:DamageCharacter(hitCharacter, self.Config.Combat.ChickenDamage, player)
+						self.FoodCombatManager:DamageCharacter(hitCharacter, self.Config.Combat.ChickenDamage, player, {
+							Critical = false,
+							Ultimate = true, -- Chicken is part of ultimate
+							FoodName = "Egg"
+						})
 					end
 				end
 			end
@@ -172,7 +176,25 @@ end
 function EggServer:OnHitNormal(player, data)
 	local HitCharacter = UtilFunctions.FindCharacter(data.Projectile.HitResult.Instance)
 	if HitCharacter then
-		self.FoodCombatManager:DamageCharacter(HitCharacter, self.Config.Combat.BaseDamage, player)
+		local isCritical = math.random() < 0.2
+		local damage = self.Config.Combat.BaseDamage
+		if isCritical then
+			damage = damage * 2
+		end
+
+		local hitPart = data.Projectile and data.Projectile.HitResult and data.Projectile.HitResult.Instance
+		local hitPos = data.Projectile and data.Projectile.HitResult and data.Projectile.HitResult.Position
+		local isHeadshot = self.FoodCombatManager:IsHeadshot(HitCharacter, hitPos, hitPart)
+		if isHeadshot then
+			print("[Headshot]", player.Name, "hit", HitCharacter.Name)
+		end
+
+		self.FoodCombatManager:DamageCharacter(HitCharacter, damage, player, {
+			Critical = isCritical,
+			Ultimate = false,
+			FoodName = "Egg",
+			Headshot = isHeadshot
+		})
 	end
 	self.CombatEvent:FireExcept(true, { player }, "Hit", data)
 end
@@ -180,7 +202,19 @@ end
 function EggServer:OnHitUltimate(player, data)
 	local HitCharacter = UtilFunctions.FindCharacter(data.Projectile.HitResult.Instance)
 	if HitCharacter then
-		self.FoodCombatManager:DamageCharacter(HitCharacter, self.Config.Combat.BaseDamage, player)
+		local hitPart = data.Projectile and data.Projectile.HitResult and data.Projectile.HitResult.Instance
+		local hitPos = data.Projectile and data.Projectile.HitResult and data.Projectile.HitResult.Position
+		local isHeadshot = self.FoodCombatManager:IsHeadshot(HitCharacter, hitPos, hitPart)
+		if isHeadshot then
+			print("[Headshot]", player.Name, "hit", HitCharacter.Name)
+		end
+
+		self.FoodCombatManager:DamageCharacter(HitCharacter, self.Config.Combat.BaseDamage, player, {
+			Critical = false,
+			Ultimate = true,
+			FoodName = "Egg",
+			Headshot = isHeadshot
+		})
 	end
 	self.CombatEvent:FireExcept(true, { player }, "Hit", data)
 	SpawnChickenNPC(self, player, data)

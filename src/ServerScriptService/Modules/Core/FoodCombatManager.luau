@@ -7,11 +7,33 @@ local FoodCombatManager = {}
 local ServerScriptService = game:GetService("ServerScriptService")
 local Players = game:GetService("Players")
 
+function FoodCombatManager:IsHeadshot(targetCharacter: Model, hitPosition: Vector3?, hitInstance: Instance?)
+	local head = targetCharacter:FindFirstChild("Head")
+	if head and head:IsA("BasePart") and hitPosition then
+		local localPos = head.CFrame:PointToObjectSpace(hitPosition)
+		local margin = 0.6
+		if math.abs(localPos.X) <= (head.Size.X * 0.5 + margin)
+			and math.abs(localPos.Y) <= (head.Size.Y * 0.5 + margin)
+			and math.abs(localPos.Z) <= (head.Size.Z * 0.5 + margin)
+		then
+			return true
+		end
+	end
+
+	local hrp = targetCharacter:FindFirstChild("HumanoidRootPart")
+	if hrp and hrp:IsA("BasePart") and hitPosition then
+		return hitPosition.Y >= (hrp.Position.Y + 1.9)
+	end
+
+	return false
+end
+
 function FoodCombatManager:Init(Core)
 	self.ProjectileManager = Core:Get("ProjectileManager")
 	self.CombatEvent = Core:Get("SharedRemotes"):GetEvent("CombatEvent")
 	self.FoodServerModuleFolder = ServerScriptService.Modules.Core.FoodServerModules
 	self.EnergyManager = Core:Get("EnergyManager")
+	self.ComboManager = Core:Get("ComboManager")
 	self.FoodModules = {}
 
 	self.UltimatePlayers = {} --list of players whose ultimate is activated
@@ -87,7 +109,7 @@ end
 --Damage Management--
 
 --note: use this function to handle ALL damaging
-function FoodCombatManager:DamageCharacter(TargetCharacter: Model, Amount: number, Attacker: Player?)
+function FoodCombatManager:DamageCharacter(TargetCharacter: Model, Amount: number, Attacker: Player?, CombatInfo: { Critical: boolean?, Ultimate: boolean?, FoodName: string?, Headshot: boolean? }?)
 	if not self.CombatEnabled then
 		return
 	end --combat disabled means no damage
@@ -121,7 +143,16 @@ function FoodCombatManager:DamageCharacter(TargetCharacter: Model, Amount: numbe
 		end
 	end
 
-	Humanoid:TakeDamage(Amount)
+	local comboCount = 0
+	local comboMultiplier = 1
+	if Attacker then
+		comboCount, comboMultiplier = self.ComboManager:Increment(Attacker)
+	end
+
+	local headshotMultiplier = (CombatInfo and CombatInfo.Headshot) and 2 or 1
+	local finalAmount = Amount * comboMultiplier * headshotMultiplier
+
+	Humanoid:TakeDamage(finalAmount)
 
 	--fire damage dealt event to attacker & damage received to victim(s)
 
@@ -129,8 +160,16 @@ function FoodCombatManager:DamageCharacter(TargetCharacter: Model, Amount: numbe
 
 	if Attacker then
 		self.CombatEvent:Fire(true, Attacker, "DamageDealt", {
-			Amount = Amount,
+			Amount = finalAmount,
+			BaseAmount = Amount,
+			Combo = {
+				Count = comboCount,
+				Multiplier = comboMultiplier,
+			},
+			Headshot = CombatInfo and CombatInfo.Headshot or false,
+			HeadshotMultiplier = headshotMultiplier,
 			TargetCharacter = TargetCharacter,
+			Combat = CombatInfo or {}
 		})
 	end
 
@@ -138,9 +177,13 @@ function FoodCombatManager:DamageCharacter(TargetCharacter: Model, Amount: numbe
 		return
 	end
 
+	self.ComboManager:Reset(TargetPlayer, "took_damage")
+
 	self.CombatEvent:Fire(true, TargetPlayer, "DamageReceived", {
 		Attacker = Attacker,
-		Amount = Amount,
+		Amount = finalAmount,
+		BaseAmount = Amount,
+		Combat = CombatInfo or {}
 	})
 end
 

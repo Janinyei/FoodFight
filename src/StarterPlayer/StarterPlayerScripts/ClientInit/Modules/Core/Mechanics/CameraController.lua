@@ -80,6 +80,13 @@ function CameraController:Init(Core)
 	--variables--
 	self.Aiming = false
 	self.BaseFOV = Camera.FieldOfView -- default fov
+	self.TargetFOV = self.BaseFOV
+	self.FOVSpeed = 10
+
+	-- FOV Spring
+	self.FOVSpring = Spring.new(self.BaseFOV)
+	self.FOVSpring.Speed = 20
+	self.FOVSpring.Damper = 0.7
 
 	--Mouse/Shiftlock stuff
 	self.ShiftLockEnabled = false
@@ -112,11 +119,37 @@ function CameraController:Init(Core)
 end
 
 function CameraController:Start()
-	
+	self.FoodCombatController = self.Core:Get("FoodCombatController")
 
 	self.InputController:SetActionCallback("ToggleShiftLock", function(state, _)
 		if state == Enum.UserInputState.Begin then
 			self:ToggleShiftLock()
+		end
+	end)
+
+	self.FoodCombatController.Fired:Connect(function()
+		self:FOVPunch(5, 0.1)
+	end)
+
+	self.FoodCombatController.UltimateActivated:Connect(function()
+		self:SetDynamicFOV(90, 0.5)
+	end)
+
+	self.FoodCombatController.UltimateDeactivated:Connect(function()
+		self:SetDynamicFOV(self.BaseFOV, 0.5)
+	end)
+
+	self.FoodCombatController.DamageDealt:Connect(function(data)
+		local isCritical = data.Combat and data.Combat.Critical
+		local isUltimate = data.Combat and data.Combat.Ultimate
+
+		if isCritical then
+			self:Shake("CriticalHit")
+			self:HitPause(0.07)
+		elseif isUltimate then
+			self:Shake("UltimateImpact")
+		else
+			self:Shake("FoodHit")
 		end
 	end)
 
@@ -138,6 +171,9 @@ function CameraController:Start()
 
 		local shakeCF = self.Shaker:Update(dt)
 		Camera.CFrame = Camera.CFrame * shakeCF
+
+		-- Update FOV
+		Camera.FieldOfView = self.FOVSpring.Position
 	end))
 end
 
@@ -185,6 +221,22 @@ function CameraController:SetSpectate(IsSpectating: boolean, Position: Vector3?)
 				Camera.CameraSubject = humanoid
 			end
 		end
+	end
+end
+
+function CameraController:FOVPunch(amount: number, duration: number)
+	self.FOVSpring.Position = self.FOVSpring.Position + amount
+end
+
+function CameraController:SetDynamicFOV(targetFOV: number, duration: number)
+	self.FOVSpring.Target = targetFOV
+end
+
+function CameraController:HitPause(duration: number)
+	local startTime = os.clock()
+	while os.clock() - startTime < duration do
+		-- Busy wait to simulate frame freeze
+		-- Note: This is usually discouraged but specifically requested for "frame freeze" feedback
 	end
 end
 

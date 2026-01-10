@@ -32,7 +32,25 @@ function BananaServer:OnHitNormal(player, data)
 		return
 	end
 
-	self.FoodCombatManager:DamageCharacter(character, self.Config.Combat.BaseDamage, player)
+	local isCritical = math.random() < 0.2
+	local damage = self.Config.Combat.BaseDamage
+	if isCritical then
+		damage = damage * 2
+	end
+
+	local hitPart = data.Projectile and data.Projectile.HitResult and data.Projectile.HitResult.Instance
+	local hitPos = data.Projectile and data.Projectile.HitResult and data.Projectile.HitResult.Position
+	local isHeadshot = self.FoodCombatManager:IsHeadshot(character, hitPos, hitPart)
+	if isHeadshot then
+		print("[Headshot]", player.Name, "hit", character.Name)
+	end
+
+	self.FoodCombatManager:DamageCharacter(character, damage, player, {
+		Critical = isCritical,
+		Ultimate = false,
+		FoodName = "Banana",
+		Headshot = isHeadshot
+	})
 end
 
 function BananaServer:OnFireUltimate(player, data)
@@ -42,7 +60,19 @@ end
 function BananaServer:OnHitUltimate(player, data)
 	local character = UtilFunctions.FindCharacter(data.Projectile.HitResult.Instance)
 	if character then
-		self.FoodCombatManager:DamageCharacter(character, self.Config.Combat.UltimateDamage or self.Config.Combat.BaseDamage * 2, player)
+		local hitPart = data.Projectile and data.Projectile.HitResult and data.Projectile.HitResult.Instance
+		local hitPos = data.Projectile and data.Projectile.HitResult and data.Projectile.HitResult.Position
+		local isHeadshot = self.FoodCombatManager:IsHeadshot(character, hitPos, hitPart)
+		if isHeadshot then
+			print("[Headshot]", player.Name, "hit", character.Name)
+		end
+
+		self.FoodCombatManager:DamageCharacter(character, self.Config.Combat.UltimateDamage or self.Config.Combat.BaseDamage * 2, player, {
+			Critical = false,
+			Ultimate = true,
+			FoodName = "Banana",
+			Headshot = isHeadshot
+		})
 	end
 
 	local projId = data.Projectile and data.Projectile.Id

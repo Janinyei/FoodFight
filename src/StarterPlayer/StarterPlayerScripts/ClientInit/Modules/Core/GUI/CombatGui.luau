@@ -17,6 +17,7 @@ local Utils = Modules.Utils
 local AnimNation = require(Utils.AnimNation)
 local Functions = require(Utils.Functions)
 local Signal = require(Utils.Signal)
+local ScreenEffects = require(Modules.Effects.ScreenEffects)
 
 --Variables--
 local Assets = ReplicatedStorage.Assets
@@ -37,9 +38,11 @@ function CombatGui:Init(Core)
 	self.HUD = PlayerGui.HUD
 	self.FoodCombatController = Core:Get("FoodCombatController")
 
-
-	
-	
+	self.ComboGui = nil
+	self.ComboLabel = nil
+	self.ComboStroke = nil
+	self.LastComboCount = 0
+	self.LastComboUpdateTime = 0
 end
 
 function CombatGui:Start()
@@ -55,6 +58,8 @@ function CombatGui:Start()
 		self:ShowDamageIndicator(data.TargetCharacter, data.Amount)
 		self:ShowHitmarker(0.35)
 
+		self:UpdateComboFromDamageDealt(data)
+
 		if data.TargetPlayer then
 		self:FeedbackMessage(data.TargetPlayer, "Elimination!", 100)
 		end
@@ -62,8 +67,98 @@ function CombatGui:Start()
 
 	self.DamageReceived:Connect(function(data)
 		print(data)
+		self:ResetCombo("took_damage")
+	end)
+
+	RunService.Heartbeat:Connect(function()
+		if self.LastComboCount > 0 and (os.clock() - self.LastComboUpdateTime) >= 3 then
+			self:ResetCombo("timeout")
+		end
 	end)
 	
+end
+
+function CombatGui:EnsureComboUI()
+	if self.ComboGui and self.ComboGui.Parent then
+		return
+	end
+
+	local gui = Instance.new("ScreenGui")
+	gui.Name = "ComboDisplay"
+	gui.ResetOnSpawn = false
+	gui.IgnoreGuiInset = true
+	gui.Parent = PlayerGui
+
+	local label = Instance.new("TextLabel")
+	label.Name = "ComboLabel"
+	label.BackgroundTransparency = 1
+	label.Position = UDim2.new(0, 18, 0.45, 0)
+	label.Size = UDim2.fromOffset(220, 60)
+	label.Font = Enum.Font.GothamBlack
+	label.TextScaled = true
+	label.TextStrokeTransparency = 1
+	label.TextTransparency = 0
+	label.TextColor3 = Color3.fromRGB(255, 255, 255)
+	label.Text = ""
+	label.AnchorPoint = Vector2.new(0, 0.5)
+	label.Parent = gui
+
+	self.ComboGui = gui
+	self.ComboLabel = label
+end
+
+function CombatGui:UpdateComboFromDamageDealt(data)
+	local comboCount = data.Combo and data.Combo.Count or 0
+	local comboMultiplier = data.Combo and data.Combo.Multiplier or 1
+	local isHeadshot = data.Headshot == true
+
+	if isHeadshot then
+		print("[Headshot] confirmed on client")
+	end
+
+	if comboCount <= 0 then
+		return
+	end
+
+	self.LastComboCount = comboCount
+	self.LastComboUpdateTime = os.clock()
+
+	self:EnsureComboUI()
+
+	local intensity = math.clamp(comboCount / 10, 0, 1)
+	local targetColor = Color3.fromRGB(255, 255, 255)
+	if comboCount >= 10 then
+		targetColor = Color3.fromRGB(255, 70, 220)
+	elseif comboCount >= 5 then
+		targetColor = Color3.fromRGB(255, 120, 0)
+	elseif comboCount >= 3 then
+		targetColor = Color3.fromRGB(255, 200, 0)
+	end
+
+	self.ComboLabel.Text = "x" .. tostring(comboMultiplier)
+	self.ComboLabel.TextColor3 = targetColor
+
+	AnimNation.impulse(self.ComboLabel, { s = 30, d = 0.65 }, {
+		Size = UDim2.fromOffset(220 + math.floor(90 * intensity), 60 + math.floor(30 * intensity)),
+	})
+	ScreenEffects.SetCombo(comboCount)
+end
+
+function CombatGui:ResetCombo(reason: string)
+	if self.LastComboCount > 0 then
+		print("[Combo] reset on client", reason, self.LastComboCount)
+	end
+
+	self.LastComboCount = 0
+	self.LastComboUpdateTime = 0
+
+	ScreenEffects.ResetCombo()
+
+	if self.ComboGui then
+		self.ComboGui:Destroy()
+	end
+	self.ComboGui = nil
+	self.ComboLabel = nil
 end
 
 --gets combat billboard

@@ -89,6 +89,27 @@ local CameraShakePresets = {
 		c.RotationInfluence = Vector3.new(1, 1, 1)
 		return c
 	end;
+
+	FoodHit = function()
+		local c = CameraShakeInstance.new(1.5, 12, 0, 0.25)
+		c.PositionInfluence = Vector3.new(0.05, 0.05, 0.05)
+		c.RotationInfluence = Vector3.new(1, 1, 1)
+		return c
+	end;
+
+	UltimateImpact = function()
+		local c = CameraShakeInstance.new(6, 14, 0.1, 1.5)
+		c.PositionInfluence = Vector3.new(0.5, 0.5, 0.5)
+		c.RotationInfluence = Vector3.new(4, 2, 2)
+		return c
+	end;
+
+	CriticalHit = function()
+		local c = CameraShakeInstance.new(3.5, 20, 0, 0.6)
+		c.PositionInfluence = Vector3.new(0.1, 0.1, 0.1)
+		c.RotationInfluence = Vector3.new(2, 0.5, 3)
+		return c
+	end;
 	
 	
 }
