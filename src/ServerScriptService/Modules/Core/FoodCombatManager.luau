@@ -6,6 +6,7 @@ local FoodCombatManager = {}
 --Services--
 local ServerScriptService = game:GetService("ServerScriptService")
 local Players = game:GetService("Players")
+local CollectionService = game:GetService("CollectionService")
 
 function FoodCombatManager:IsHeadshot(targetCharacter: Model, hitPosition: Vector3?, hitInstance: Instance?)
 	local head = targetCharacter:FindFirstChild("Head")
@@ -94,6 +95,14 @@ function FoodCombatManager:Start()
 
 			if module.OnHit then
 				module:OnHit(player, data)
+			end
+
+			local hitInstance = data.Projectile and data.Projectile.HitResult and data.Projectile.HitResult.Instance
+			if hitInstance then
+				local model = hitInstance:FindFirstAncestorWhichIsA("Model")
+				if model and CollectionService:HasTag(model, "Destroyable") and model.Name == "Barrel" then
+					self:ProcessDestroyableHit(player, model, data.Projectile.HitResult.Position)
+				end
 			end
 
 			self.CombatEvent:FireExcept(true, { player }, "Hit", data)
@@ -215,6 +224,40 @@ end
 
 function FoodCombatManager:IsUltimate(player)
 	return table.find(self.UltimatePlayers, player) ~= nil and true or false
+end
+
+function FoodCombatManager:ProcessDestroyableHit(attacker: Player, model: Model, hitPosition: Vector3)
+	print(string.format("[FoodCombatManager] Barrel hit at %s by %s", tostring(hitPosition), attacker.Name))
+
+	self.CombatEvent:Fires(true, "DestroyableHit", {
+		Type = "Barrel",
+		Position = hitPosition,
+		Model = model
+	})
+
+	local explosionRadius = 15
+	local knockbackForce = 50
+
+	for _, otherPlayer in ipairs(Players:GetPlayers()) do
+		local character = otherPlayer.Character
+		if character and character:FindFirstChild("HumanoidRootPart") then
+			local hrp = character.HumanoidRootPart
+			local distance = (hrp.Position - hitPosition).Magnitude
+
+			if distance <= explosionRadius then
+				local direction = (hrp.Position - hitPosition).Unit
+				if distance < 0.1 then
+					direction = Vector3.new(0, 1, 0)
+				end
+
+				local velocity = (direction + Vector3.new(0, 0.5, 0)).Unit * knockbackForce * (1 - (distance / explosionRadius))
+				hrp.AssemblyLinearVelocity = velocity
+
+				-- self:ApplyRagdoll(character, 2)
+				-- self:DamageCharacter(character, 20, attacker, { FoodName = "Explosion", Critical = false })
+			end
+		end
+	end
 end
 
 return FoodCombatManager

@@ -423,12 +423,39 @@ function FoodCombatController:StartReplication()
 		elseif action == "DamageReceived" then
 			print("handling damage received effects")
 			self.DamageReceived:Fire(data)
+		elseif action == "DestroyableHit" then
+			self:HandleDestroyableHit(data)
 		else
 			print(action, data)
 			self:HandleSpecialAction(action, data)
 			--pass up to custom action management
 		end
 	end)
+end
+
+function FoodCombatController:HandleDestroyableHit(data)
+	if data.Type == "Barrel" then
+		local explosionPos = data.Position
+		local model = data.Model
+
+		if model then
+			for _, descendant in ipairs(model:GetDescendants()) do
+				if descendant:IsA("ParticleEmitter") then
+					descendant:Emit(descendant:GetAttribute("EmitCount") or 20)
+				end
+			end
+		end
+
+		local char = LocalPlayer.Character
+		if char and char:FindFirstChild("HumanoidRootPart") then
+			local distance = (char.HumanoidRootPart.Position - explosionPos).Magnitude
+			local maxShakeDistance = 50
+
+			if distance <= maxShakeDistance then
+				self.CameraController:Shake("Explosion")
+			end
+		end
+	end
 end
 
 --sets up even more custom functionality
