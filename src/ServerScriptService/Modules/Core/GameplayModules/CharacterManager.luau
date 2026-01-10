@@ -35,10 +35,12 @@ function CharacterManager:Init(Core)
 				if CreatorTag and CreatorTag.Value then
 					Killer = CreatorTag.Value
 				end
-
-				CombatEvent:Fire(true, player, "YouDied", {
+--[[
+--commented out because was causing issues with foodcombatcontroller as the special action part of the combatevent in the foodcombatcontroller was running rather than the killcam
+CombatEvent:Fire(true, player, "YouDied", {
 					Killer = Killer
-				})
+				})]]
+				
 			end)
 		end)
 	end)

@@ -13,6 +13,7 @@ local InGame = MusicSoundGroup.InGame
 local SoundEffectsGroup = SoundService:FindFirstChild("SoundEffects")
 local CharacterSounds = SoundEffectsGroup.CharacterSounds
 local ParkourSounds = CharacterSounds.Parkour
+local Intermission = SoundService.Music.Intermission
 
 --audio data:
 --[[
@@ -44,6 +45,12 @@ local AudioConfig = {
 		--	ShouldReplicate = true,
 	},
 
+	["lobby song"] = {
+		Id = "1839824117",
+		SoundGroup = Intermission,
+		FadeOutTime = 4,
+	},
+
 	--movement audio--
 
 	["vault"] = {
@@ -63,7 +70,6 @@ local AudioConfig = {
 		SoundGroup = ParkourSounds,
 		ShouldReplicate = true,
 	},
-
 
 	["InGame"] = {
 		AudioList = {

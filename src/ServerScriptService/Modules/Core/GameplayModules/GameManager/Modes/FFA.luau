@@ -13,15 +13,18 @@ local FFA = {}
 
 
 
-function FFA:Init(Core)
-    self.Timer =  nil
+function FFA:InitMode(Core)
+
+    self.Name = "FFA"
     self.DisplayName = "Free For All"
+    self.DescriptionText = "Fight any Player you can find!" -- will be used for countdown
 end
 
 
 
---don't shorted to Start or else Core framework will auto run it lol
-function FFA:StartGame()
+function FFA:StartMode()
+    print("ffa hooray")
+    --use team manager to set all players teams to fighters
     
 end
 
@@ -29,8 +32,6 @@ end
 function FFA:OnComplete()
     
 end
-
-
 
 
 

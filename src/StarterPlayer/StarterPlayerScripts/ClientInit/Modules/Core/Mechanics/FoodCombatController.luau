@@ -461,6 +461,7 @@ end
 --sets up even more custom functionality
 function FoodCombatController:HandleSpecialAction(action: string, data)
 	local FoodClientModule = self.FoodModules[data.Combat.FoodName]
+
 	if not FoodClientModule.HandleAction then
 		return
 	end
