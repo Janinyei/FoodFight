@@ -30,6 +30,8 @@ end
 --on end
 function Countdown:OnComplete()
     self.GameManager:SetMode("FFA")
+
+    
 end
 
 

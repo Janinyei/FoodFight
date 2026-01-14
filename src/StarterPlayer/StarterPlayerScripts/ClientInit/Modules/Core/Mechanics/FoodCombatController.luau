@@ -52,6 +52,7 @@ function FoodCombatController:Init(Core)
 	self.UltimateActivated = Signal.new()
 	self.UltimateDeactivated = Signal.new()
 	self.Fired = Signal.new()
+	self.PlayerEliminated = Signal.new()
 
 	--loading food modules--
 	self.FoodModules = {}

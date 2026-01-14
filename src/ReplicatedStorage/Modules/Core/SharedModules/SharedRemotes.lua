@@ -19,7 +19,8 @@ function SharedRemotes:Init()
 		"StatusEffectEvent",
 		"AudioEvent",
 		"VoteEvent",
-		"LeaderboardEvent"
+		"LeaderboardEvent",
+		"KillEffectsEvent"
 	}
 
 	self.Events = nil

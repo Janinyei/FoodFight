@@ -24,10 +24,11 @@ function module:Init(Core)
 	self.DataEvent = Core:Get("SharedRemotes"):GetEvent("DataEvent")
 
 	local function PlayerAdded(player)
-		local profile = PlayerStore:StartSessionAsync(`{player.UserId}`, {
+		local profile = PlayerStore.Mock:StartSessionAsync(`{player.UserId}`, {
 			Cancel = function()
 				return player.Parent ~= Players
 			end,
+
 		})
 
 		if profile ~= nil then
@@ -113,6 +114,8 @@ end
 
 --Default data (migrated from separate module to here)--
 module.DefaultData = {
+
+	
 	Currency = {
 		Coins = 50,
 		Gems = 0,
@@ -131,7 +134,8 @@ module.DefaultData = {
 		Equipped = {
 			Food = "Banana",
 			Trails = "Basic",
-			Auras = "idk" --can't set to nil cuz ProfileStore deletes nil keys
+			Auras = "idk", --can't set to nil cuz ProfileStore deletes nil keys
+			KillEffects = "Blackhole",
 		},
 
 		Food = {
@@ -162,6 +166,14 @@ module.DefaultData = {
 				Amount = 3,
 			},
 		},
+
+		KillEffects = {
+			Blackhole = {
+				Name = "Blackhole",
+				Type = "KillEffects",
+				Amount = 1
+			}
+		}
 	},
 
 	Settings = {

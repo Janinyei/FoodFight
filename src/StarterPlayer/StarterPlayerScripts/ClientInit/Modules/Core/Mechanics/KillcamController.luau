@@ -13,37 +13,37 @@ function KillcamController:Init(Core)
 	self.CombatEvent = Core:Get("SharedRemotes"):GetEvent("CombatEvent")
 	self.ScreenGuiController = Core:Get("ScreenGuiController")
 	self.CameraController = Core:Get("CameraController")
+	self.PlayerEliminated = Core:Get("FoodCombatController").PlayerEliminated
 end
 
 function KillcamController:Start()
-	self.CombatEvent:Connect(function(action, data)
-		if action == "YouDied" then
-			self:StartKillcam(data.Killer)
-		end
+	self.PlayerEliminated:Connect(function(targetPlayer, data)
+		print(targetPlayer)
+		print(data)
 	end)
 end
 
 function KillcamController:StartKillcam(KillerPlayer)
 	if not KillerPlayer then
 		-- for example this is if you reset or something
-        self:ShowRespawnMenu()
+		self:ShowRespawnMenu()
 		return
 	end
 
 	local KillerChar = KillerPlayer.Character
 	if not KillerChar then
-        self:ShowRespawnMenu()
+		self:ShowRespawnMenu()
 		return
 	end
 
 	local KillerHum = KillerChar:FindFirstChild("Humanoid")
 	if not KillerHum or KillerHum.Health <= 0 then
-         self:ShowRespawnMenu()
+		self:ShowRespawnMenu()
 		return
 	end
-        
-    Camera.CameraSubject = KillerHum
-    
+
+	Camera.CameraSubject = KillerHum
+
 	if self.CameraController.CameraLerpSpring then
 		local OldSpeed = self.CameraController.CameraLerpSpring.Speed
 		self.CameraController.CameraLerpSpring.Speed = 3
@@ -51,14 +51,14 @@ function KillcamController:StartKillcam(KillerPlayer)
 			self.CameraController.CameraLerpSpring.Speed = OldSpeed or 20
 		end)
 	end
-    
-    task.delay(3, function()
-       self:ShowRespawnMenu()
-    end)
+
+	task.delay(3, function()
+		self:ShowRespawnMenu()
+	end)
 end
 
 function KillcamController:ShowRespawnMenu()
-    self.ScreenGuiController:SetScreen("Menu")
+	self.ScreenGuiController:SetScreen("Menu")
 
 	-- TODO:
 end

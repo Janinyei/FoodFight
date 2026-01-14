@@ -49,6 +49,8 @@ function CharacterController:Init(Core)
 		--	end
 	end)
 
+	self.Enabled = false
+
 	--Cleanup on character death/removal
 	LocalPlayer.CharacterRemoving:Connect(function(character)
 		self:Cleanup()

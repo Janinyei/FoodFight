@@ -12,6 +12,7 @@ function LeaderboardManager:Init(Core)
 
 	self.LeaderboardEvent = Core:Get("SharedRemotes"):GetEvent("LeaderboardEvent")
 	self.DataManager = Core:Get("DataManager")
+	self.MatchStatsManager = Core:Get("MatchStatsManager")
 end
 
 function LeaderboardManager:Start()
@@ -19,24 +20,35 @@ function LeaderboardManager:Start()
 
 	--runs when player joins and data is loaded
 	self.DataManager.DataLoaded:Connect(function(player, data)
+		--lowk useless i think
+	end)
+
+	--invoked event once player who joined is ready
+	self.LeaderboardEvent:Connect(function(player)
+		print("ready to load " .. player.Name)
 		self.LeaderboardEvent:Fires(true, {
-
-            Action = "Update",
-
+			Action = "Update",
 			TargetPlayer = player,
-			Level = data.Progression.Level,
-
 		})
 	end)
 
 	Players.PlayerRemoving:Connect(function(player, reason)
-		self.LeaderboardEvent:Fires(true,  {
+		self.LeaderboardEvent:Fires(true, {
 
-            Action = "Remove",
-
-
+			Action = "Remove",
 			TargetPlayer = player,
+		})
 
+	end)
+
+	--update stats--
+
+	self.MatchStatsManager.StatsChanged:Connect(function(TargetPlayer, newStats)
+		print("stat changed event")
+		self.LeaderboardEvent:Fires(true, {
+			Action = "Update",
+			TargetPlayer = TargetPlayer,
+			MatchStats = newStats,
 		})
 	end)
 end

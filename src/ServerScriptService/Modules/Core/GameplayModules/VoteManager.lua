@@ -4,6 +4,8 @@
 local ServerStorage = game:GetService("ServerStorage")
 local VoteManager = {}
 
+local Players = game:GetService("Players")
+
 function VoteManager:Init(Core)
 	self.Core = Core
 	self.CanVote = false
@@ -19,6 +21,14 @@ function VoteManager:Start()
 	self.VoteEvent:Connect(function(player, playerVoteData)
 		if self.CanVote and playerVoteData then
 			self:UpdateVotes(player, playerVoteData)
+		end
+	end)
+
+
+	--loads vote menu for late players
+	Players.PlayerAdded:Connect(function(player)
+		if self.CanVote then
+			self.VoteEvent:Fire(true, player, "Enable")
 		end
 	end)
 end
@@ -43,8 +53,13 @@ function VoteManager:UpdateVotes(player, playerVoteData)
 	local optionName = self.OptionData[vType][vIndex]
 	table.insert(self.VoteCache[vType][optionName], player)
 
-	-- 3. Sync vote counts to all clients (optional, but good for feedback)
-	-- self.VoteEvent:FireAllClients("UpdateCounts", self:GetVoteCounts())
+	--send event to the other clients
+	self.VoteEvent:Fires(true, "UpdateHeadshot", {
+			Player = player,
+			voteType = vType,
+			OptionIndex = vIndex,
+			Position = playerVoteData.Position
+		})
 end
 
 function VoteManager:EnableVoting()

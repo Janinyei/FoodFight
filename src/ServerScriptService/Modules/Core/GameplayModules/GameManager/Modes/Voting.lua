@@ -1,5 +1,3 @@
-
-
 --mode purpose:
 
 --[[
@@ -12,63 +10,53 @@ disable combat
 
 local Voting = {}
 
-
 function Voting:InitMode(Core)
-    self.FoodCombatController = Core:Get("FoodCombatManager")
-    self.GameStatusController = Core:Get("GameStatusManager")
-    self.GameManager = Core:Get("GameManager")
-    self.VoteManager = Core:Get("VoteManager")
-    self.TeamManager = Core:Get("TeamManager")
-    self.MapManager = Core:Get("MapManager")
-  
+	self.FoodCombatController = Core:Get("FoodCombatManager")
+	self.GameManager = Core:Get("GameManager")
+	self.VoteManager = Core:Get("VoteManager")
+	self.TeamManager = Core:Get("TeamManager")
+	self.MapManager = Core:Get("MapManager")
+	self.MatchStatsManager = Core:Get("MatchStatsManager")
 
-    self.Name = "Voting"
-    self.Duration = 5 --typical duration
-    
+	self.Name = "Voting"
+	self.Duration = 5 --typical duration
 end
 
 function Voting:StartMode()
-   
-    print("starting voting")
+	print("starting voting")
 
-    self.VoteManager:EnableVoting()
+	self.VoteManager:EnableVoting()
 end
-
 
 function Voting:OnComplete()
-    print("complete voting")
-    --clean up leaderboard stats, use team manager to create balanced teams
+	print("complete voting")
+	--clean up leaderboard stats, use team manager to create balanced teams
 
-    self.VoteManager:DisableVoting() --disables votes
+	self.VoteManager:DisableVoting() --disables votes
 
-
-    self.TeamManager:CleanupTeams() --clears team table
-
-   -- self.VoteManager:SetupTeams()--creates teams from votes
-
-   self.TeamManager:CreateTeam("red")
-   self.TeamManager:CreateTeam("blue")
-
-   self.TeamManager:AutoAssignBalancedTeams()
+	self.TeamManager:CleanupTeams() --clears team table
 
 
-   
-   print(self.TeamManager.Teams)
+	
 
-   
-   local Map, Mode =   self.VoteManager:GetWinners()
-   self.MapManager:LoadMap(Map)
-   
-   --enable spawning using charactermanager
-   
+    --get vote winners
+	local Map, Mode = self.VoteManager:GetWinners()
+	self.MapManager:LoadMap(Map)
 
-   task.wait(5) --map load delay
+	--enable spawning using charactermanager
 
-   --
-    self.GameManager:SetMode(Mode)
+    --create & balance teams
+	self.TeamManager:CreateTeamsFromMode(Mode)
+    self.TeamManager:AutoAssignBalancedTeams()
+
+    print(self.TeamManager.Teams)
+
+	task.delay(5, function()
+		--enable match stats--
+
+		self.MatchStatsManager:LoadAllPlayers()
+		self.GameManager:SetMode(Mode)
+	end)
 end
-
-
-
 
 return Voting

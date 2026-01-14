@@ -47,6 +47,7 @@ function Core:Init(ModulesToLoad: Folder)
 		return a.priority > b.priority or (a.priority == b.priority and a.name < b.name)
 	end)
 
+	print(self.SortedModules)
 	-- Load modules into cache
 	for i, data in ipairs(self.SortedModules) do
 		-- Load

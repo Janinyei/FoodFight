@@ -87,7 +87,7 @@ function AnimationController:Init(Core)
 			priority = Enum.AnimationPriority.Action,
 		},
 
-		--emotes--
+		--emotes?--
 	}
 
 	self.LoadedAnimTracks = {} -- table to place all loaded anim tracks
@@ -99,11 +99,14 @@ function AnimationController:Init(Core)
 
 	self.Character = nil
 	self.Humanoid = nil
+
+
+	self.AnimationRuntimeEvent = nil
 end
 
 function AnimationController:Start()
 	self.CharacterController.CharacterLoaded:Connect(function(char, hum)
-		print(char.Name)
+		--print(char.Name)
 		self.Character = char
 		self.Humanoid = hum
 
@@ -112,7 +115,7 @@ function AnimationController:Start()
 		--load all animations--
 
 		for trackName, animData in self.Animations do
-			print(animData)
+		--	print(animData)
 			local Animation = Instance.new("Animation")
 			Animation.AnimationId = "rbxassetid://" .. animData.id
 			Animation.Name = trackName
@@ -162,8 +165,8 @@ end
 --priv--
 
 function AnimationController:_handleMovementAnims()
-	if not (self.Character and self.Humanoid) then
-		return
+	if self.AnimationRuntimeEvent then
+		self.AnimationRuntimeEvent:Disconnect()
 	end
 
 	local hum = self.Humanoid
@@ -231,7 +234,12 @@ function AnimationController:_handleMovementAnims()
 	end)
 
 	--Animation Loop(primarily for movement)
-	RunService.PreRender:Connect(function(dt)
+	self.AnimationRuntimeEvent = RunService.PreRender:Connect(function(dt)
+		if not (self.Character and self.Humanoid) then
+			return
+		end
+		
+
 		--if ParkourStates:IsState("Vaulting") or ParkourStates:IsState("Sliding") then return end
 
 		if ParkourStates:IsState("Sliding") then

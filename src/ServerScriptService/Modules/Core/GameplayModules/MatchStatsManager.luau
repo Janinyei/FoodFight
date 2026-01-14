@@ -11,26 +11,39 @@ local Signal = require(game.ReplicatedStorage.Modules.Utils.Signal)
 
 --btw these were generated so I may not use all of them
 
+local defaultMatchStats = {
+	Kills = 0,
+		Assists = 0,
+		Points = 0,
+}
+
 function MatchStatsManager:Init(Core)
 	self.PlayerData = {}
 	self.LeaderboardEvent = Core:Get("SharedRemotes"):GetEvent("LeaderboardEvent")
-	 self.StatChanged = Signal.new()
+	self.GameManager = Core:Get("GameManager")
+	 self.StatsChanged = Signal.new()
 end
 
 function MatchStatsManager:Start()
+
+	Players.PlayerAdded:Connect(function(player)
+		if self.GameManager.InGame then  
+			self:LoadPlayer(player)
+		end
+	end)
 	Players.PlayerRemoving:Connect(function(player)
 		self:RemovePlayer(player)
 	end)
+
+
 end
 
 function MatchStatsManager:LoadPlayer(player)
-	self.PlayerData[player] = {
-		-- Core Stats
-		Kills = 0,
-		Deaths = 0,
-		Assists = 0,
-		Points = 0,
-	}
+	self.PlayerData[player] = defaultMatchStats
+
+
+	--fire stats changed for initial update
+	self.StatsChanged:Fire(player, self.PlayerData[player])
 end
 
 function MatchStatsManager:Increment(targetPlr: Player, statName: string, amount: number?)
@@ -46,7 +59,7 @@ function MatchStatsManager:Increment(targetPlr: Player, statName: string, amount
 	if self.PlayerData[targetPlr] and self.PlayerData[targetPlr][statName] then
 		local Amt = amount or 1
 		self.PlayerData[targetPlr][statName] += Amt
-        self.StatChanged:Fire(targetPlr, statName, self.PlayerData[targetPlr][statName])
+        self.StatsChanged:Fire(targetPlr, self.PlayerData[targetPlr])
 	end
 end
 
@@ -60,6 +73,10 @@ function MatchStatsManager:RemovePlayer(player)
 	if self.PlayerData[player] then
 		self.PlayerData[player] = nil
 	end
+
+	--fires statschanged to reset leaderboard
+
+	self.StatsChanged:Fire( player , defaultMatchStats)
 end
 
 function MatchStatsManager:RemoveAllPlayers()

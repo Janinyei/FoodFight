@@ -10,8 +10,10 @@ function VFXController:Init(Core)
 end
 
 function VFXController:Start()
-	for _, effectModule in game.ReplicatedStorage.Modules.Effects:GetChildren() do
+	for _, effectModule in game.ReplicatedStorage.Modules.Effects:GetDescendants() do
+		if effectModule:IsA("ModuleScript") then
 		self:RegisterEffect(effectModule.Name, require(effectModule))
+		end
 	end
 end
 

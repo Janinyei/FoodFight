@@ -16,7 +16,7 @@ local Intermission = {}
 
 function Intermission:InitMode(Core)
     self.FoodCombatController = Core:Get("FoodCombatManager")
-    self.GameStatusController = Core:Get("GameStatusManager")
+    self.MatchStatsManager = Core:Get("MatchStatsManager")
     self.GameManager = Core:Get("GameManager")
     self.MapManager = Core:Get("MapManager")
     self.AudioManager = Core:Get("AudioManager")
@@ -34,9 +34,13 @@ function Intermission:StartMode()
     
     --clean up map--
     self.MapManager:CleanupCurrentMap()
+    self.GameManager.InGame = false
 
     --disable combat--
 
+
+    --cleanup match stats
+    self.MatchStatsManager:RemoveAllPlayers()
 
     --play some intermission music
     self.AudioManager:PlayRandomSong("Intermission")

@@ -45,7 +45,6 @@ function GameManager:Init(Core)
 	self.Timer = Timer.new(INTERMISSION_TIME)
 	self.CurrentMode = nil
 	self.TimerEvent = Core:Get("SharedRemotes"):GetEvent("TimerEvent")
-	self.GameStatusManager = Core:Get("GameStatusManager")
 	self.MatchStatsManager = Core:Get("MatchStatsManager")
 
 	--mode table--
@@ -63,7 +62,11 @@ function GameManager:Init(Core)
 		"CTF"
 	}
 
+
+	self.ActivePlayers = {}
 	self.PlayableModes = PlayableModes
+
+	self.InGame = false --indicates whether a game is active or not or in lobby/intermission
 end
 
 function GameManager:Start()
@@ -84,6 +87,8 @@ function GameManager:Start()
         if table.find(self.PlayableModes, self.CurrentMode.Name) ~= nil then
             --automatically set to intermission for playable game modes so you don't have to repeat it constantly
             self:SetMode("Intermission")
+			self.InGame = false
+
         end
 
 		if self.CurrentMode.OnComplete then
@@ -104,6 +109,10 @@ function GameManager:SetMode(ModeName: string)
 		--start timer
 		local duration = self.CurrentMode.Duration or 20
 		self.Timer:SetTime(duration)
+
+		if table.find(self.PlayableModes, self.CurrentMode.Name) ~= nil then
+			self.InGame = true
+		end
 	else
 		warn("Round: " .. ModeName .. " does not exist")
 	end

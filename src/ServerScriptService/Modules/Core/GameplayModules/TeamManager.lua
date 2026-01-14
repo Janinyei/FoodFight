@@ -4,6 +4,9 @@
 
 
 local TeamManager = {}
+
+--moduels--
+local ModeConfig = require(game.ReplicatedStorage.Modules.Info.ModeConfig)
 local TeamConfig = require(game.ReplicatedStorage.Modules.Info.TeamConfig)
 local Signal = require(game.ReplicatedStorage.Modules.Utils.Signal)
 -- Services
@@ -42,6 +45,7 @@ end
 
 --removes a team
 function TeamManager:RemoveTeam(TeamName : string)
+
     if self.Teams[TeamName] == nil then
         warn('team ' .. TeamName .. ' does not exist')
         return
@@ -74,22 +78,30 @@ function TeamManager:AssignPlayerToTeam(plr : Player, TeamName : string)
     table.insert(self.Teams[TeamName].Players, plr)
 end
 
---auto assigns players to balanced teams
+-- auto assigns players to balanced teams
 function TeamManager:AutoAssignBalancedTeams()
-    --simple round robin assignment for now
+    -- FIX: Use next() to check if a dictionary is empty
+    if next(self.Teams) == nil then
+        warn("no teams to assign")
+        return
+    end
+
+    -- simple round robin assignment for now
     local teamNames = {}
     for tName, team in pairs(self.Teams) do
-        team.Players = {} --clear current players
+        team.Players = {} -- clear current players
         table.insert(teamNames, tName)
     end
 
     local players = Players:GetPlayers()
     for i, plr in pairs(players) do
-        local teamIndex = ((i - 1) % #teamNames) + 1
-        self:AssignPlayerToTeam(plr, teamNames[teamIndex])
+        -- Double check that teamNames actually populated
+        if #teamNames > 0 then
+            local teamIndex = ((i - 1) % #teamNames) + 1
+            self:AssignPlayerToTeam(plr, teamNames[teamIndex])
+        end
     end
 end
-
 --assigns team in a balanced fashion to new players
 function TeamManager:AssignNewPlayer(plr : Player)
 
@@ -111,6 +123,17 @@ function TeamManager:AssignNewPlayer(plr : Player)
     else
         warn('no teams available to assign player to')
     end 
+end
+
+
+--creates team based on mode config
+
+function TeamManager:CreateTeamsFromMode(modeName : string)
+    local teamTable = ModeConfig[modeName].Teams
+
+    for _, teamName in teamTable do
+        self:CreateTeam(teamName)
+    end
 end
 
 

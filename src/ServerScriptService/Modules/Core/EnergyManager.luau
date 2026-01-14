@@ -31,10 +31,9 @@ local EnergyManager = {}
 
 function EnergyManager:Init(Core)
 	self.PlayerEnergyData = {}
-	self.GameStatusManager = Core:Get("GameStatusManager")
 	self.DataManager = Core:Get("DataManager")
 	self.CombatEvent = Core:Get("SharedRemotes"):GetEvent("CombatEvent")
-
+	self.GameManager = Core:Get("GameManager")
 	self.FoodCombatManager = Core:Get("FoodCombatManager")
 
 	self._heartbeatConnection = nil
@@ -65,11 +64,11 @@ function EnergyManager:Start(Core)
 
 	--create runservice event that slowly increases all energy (only for players that are active)
 
-	local ActivePlayers = self.GameStatusManager.ActivePlayers
+	local ActivePlayers = self.GameManager.ActivePlayers
 	print(ActivePlayers)
 
 	self._heartbeatConnection = RunService.Heartbeat:Connect(function(deltaTime)
-		for _, plr in ipairs(self.GameStatusManager.ActivePlayers) do
+		for _, plr in ipairs(self.GameManager.ActivePlayers) do
 			local CurrentFood = self.PlayerEnergyData[plr] and self.PlayerEnergyData[plr].CurrentFood
 
 			if not CurrentFood then

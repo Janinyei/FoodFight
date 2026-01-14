@@ -9,10 +9,33 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Modules = ReplicatedStorage.Modules
 
 local UtilFunctions = require(Modules.Utils.Functions)
+local Signal = require(Modules.Utils.Signal)
 
 function CharacterManager:Init(Core)
 	self.StatusEffectManager = Core:Get("StatusEffectManager")
-	Players.RespawnTime = 1000000
+	self.KillEffectsManager = Core:Get("KillEffectsManager")
+
+	self.FoodCombatManager = Core:Get("FoodCombatManager")
+
+	self.GameManager = Core:Get("GameManager")
+	self.SharedRemotes = Core:Get("SharedRemotes")
+	self.CombatEvent = self.SharedRemotes:GetEvent("CombatEvent")
+	self.RespawnTime = 8 --typical respawn time
+	self.CharacterEvent = self.SharedRemotes:GetEvent("CharacterEvent")
+end
+
+function CharacterManager:SpawnCharacter(plr: Player)
+	plr:LoadCharacterAsync()
+
+	warn("character loading on server")
+
+	if self.GameManager.InGame == true then
+		table.insert(self.GameManager.ActivePlayers, plr)
+	end
+end
+
+function CharacterManager:Start()
+	--Spawn Management--
 
 	Players.PlayerAdded:Connect(function(player)
 		player.CharacterAdded:Connect(function(char)
@@ -20,33 +43,41 @@ function CharacterManager:Init(Core)
 			local hum = char:WaitForChild("Humanoid")
 			hum.BreakJointsOnDeath = false
 			self:_setupRagdollConstraints(char)
-			
-			local SharedRemotes = Core:Get("SharedRemotes")
-			local CombatEvent = SharedRemotes:GetEvent("CombatEvent")
 
 			hum.Died:Connect(function()
 				self:EnableRagdoll(char)
 
-				hum.RootPart:ApplyImpulse(hum.RootPart:GetMass() * Vector3.yAxis * 500)
-				hum.RootPart:ApplyAngularImpulse(hum.RootPart:GetMass() * Vector3.one * math.random(100, 500))
+				print(hum.RootPart)
+				char.HumanoidRootPart:SetNetworkOwner(player)
 
-				local CreatorTag = hum:FindFirstChild("creator")
-				local Killer = nil
-				if CreatorTag and CreatorTag.Value then
-					Killer = CreatorTag.Value
+				--	hum.RootPart:ApplyImpulse(hum.RootPart:GetMass() * Vector3.yAxis * 500)
+				--	hum.RootPart:ApplyAngularImpulse(hum.RootPart:GetMass() * Vector3.one * math.random(100, 500))
+
+				local activePlrIndex = table.find(self.GameManager.ActivePlayers, player)
+				if activePlrIndex then
+					table.remove(self.GameManager.ActivePlayers, activePlrIndex)
 				end
---[[
---commented out because was causing issues with foodcombatcontroller as the special action part of the combatevent in the foodcombatcontroller was running rather than the killcam
-CombatEvent:Fire(true, player, "YouDied", {
-					Killer = Killer
-				})]]
-				
+
+				local elimData = self.FoodCombatManager:ProcessElimination(player)
+				self.KillEffectsManager:StartKillEffect(player, elimData)
+
+				task.delay(self.RespawnTime, function()
+					self:SpawnCharacter(player)
+				end)
 			end)
 		end)
-	end)
-end
 
-function CharacterManager:Start()
+		self:SpawnCharacter(player) --make sure this line is placed after the characteradded event
+	end)
+
+	self.CharacterEvent:Connect(function(player, action)
+		print(action)
+		if action == "Spawn" then
+			self:SpawnCharacter(player)
+		end
+	end)
+
+	--Status Effect Management--
 	self.StatusEffectManager.StatusEffectApplied:Connect(function(plr, effectName)
 		if effectName == "Ragdoll" then
 			self:EnableRagdoll(plr.Character)

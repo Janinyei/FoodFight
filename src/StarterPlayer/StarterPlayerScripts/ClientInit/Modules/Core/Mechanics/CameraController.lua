@@ -101,6 +101,19 @@ function CameraController:Init(Core)
 	self.MOUSE_LOCK_ICON = "rbxassetid://103003009346193"
 
 	self.CAMERA_AIM_OFFSET = Vector3.new(2,0,-2)
+	
+	-- Recoil Settings
+	self.RECOIL_DEFAULTS = {
+		recoilAmount = 2,
+		sideAmount = 1,
+		recoilSpeed = 0.05,
+		recoverSpeed = 0.5,
+		randomness = 0.2
+	}
+	self.ActiveRecoils = {}
+	self.RecoilOffset = Vector2.zero -- Smoothed accumulated recoil
+	self.LastRecoilCF = CFrame.new() -- Tracked to prevent accumulation
+	self.LastShakeCF = CFrame.new() -- Same for shake
 
 	--springs--
 	self.OffsetSpring = Spring.new(Vector3.zero)
@@ -128,7 +141,7 @@ function CameraController:Start()
 	end)
 
 	self.FoodCombatController.Fired:Connect(function()
-		self:FOVPunch(5, 0.1)
+		self:ApplyRecoil()
 	end)
 
 	self.FoodCombatController.UltimateActivated:Connect(function()
@@ -143,13 +156,16 @@ function CameraController:Start()
 		local isCritical = data.Combat and data.Combat.Critical
 		local isUltimate = data.Combat and data.Combat.Ultimate
 
+		self:FOVPunch(isCritical and -4 or -2, 0.1)
+
 		if isCritical then
-			self:Shake("CriticalHit")
+			self:Shake(0.4, 15, 0.05, 0.3)
 			self:HitPause(0.07)
 		elseif isUltimate then
-			self:Shake("UltimateImpact")
+			self:Shake(0.5, 20, 0.05, 0.5)
+			self:HitPause(0.1)
 		else
-			self:Shake("FoodHit")
+			self:Shake(0.175, 12, 0.05, 0.1)
 		end
 	end)
 
@@ -169,8 +185,42 @@ function CameraController:Start()
 			Camera.CFrame = ((Camera.CFrame - Camera.CFrame.Position) + CameraLerpSpring.Position) * CFrame.new(self.OffsetSpring.Position)		
 		end
 
-		local shakeCF = self.Shaker:Update(dt)
-		Camera.CFrame = Camera.CFrame * shakeCF
+		-- 1. Clean up/Undo previous frame's offsets to prevent accumulation
+		Camera.CFrame = Camera.CFrame * self.LastRecoilCF:Inverse() * self.LastShakeCF:Inverse()
+
+		-- 2. Update Recoil Math
+		local accumulatedTarget = Vector2.zero
+		for i = #self.ActiveRecoils, 1, -1 do
+			local recoil = self.ActiveRecoils[i]
+			recoil.elapsedTime = recoil.elapsedTime + dt
+			
+			local weight = 0
+			if recoil.isRising then
+				local progress = math.min(recoil.elapsedTime / recoil.config.recoilSpeed, 1)
+				weight = 1 - (1 - progress)^2 -- Quadratic ease-out for the "kick"
+				if progress >= 1 then
+					recoil.isRising = false
+					recoil.elapsedTime = 0
+				end
+			else
+				local progress = math.max(1 - recoil.elapsedTime / recoil.config.recoverSpeed, 0)
+				weight = progress^3 -- Cubic ease-in for the "recovery"
+				if progress <= 0 then
+					table.remove(self.ActiveRecoils, i)
+				end
+			end
+			
+			accumulatedTarget = accumulatedTarget + recoil.target * weight
+		end
+
+		-- 3. Smoothly transition the recoil offset to return to center
+		self.RecoilOffset = self.RecoilOffset + (accumulatedTarget - self.RecoilOffset) * dt * 10
+		
+		-- 4. Re-apply fresh offsets
+		self.LastRecoilCF = CFrame.Angles(math.rad(self.RecoilOffset.Y), math.rad(self.RecoilOffset.X), 0)
+		self.LastShakeCF = self.Shaker:Update(dt)
+
+		Camera.CFrame = Camera.CFrame * self.LastRecoilCF * self.LastShakeCF
 
 		-- Update FOV
 		Camera.FieldOfView = self.FOVSpring.Position
@@ -231,6 +281,35 @@ end
 function CameraController:SetDynamicFOV(targetFOV: number, duration: number)
 	self.FOVSpring.Target = targetFOV
 end
+
+function CameraController:ApplyRecoil(multiplier: number?, config: table?)
+	multiplier = multiplier or 1
+	local cfg = config or self.RECOIL_DEFAULTS
+	
+	-- Clean targeted recoil math
+	local rand = cfg.randomness
+	local randomMult = function() return 1 + (math.random() * 2 * rand - rand) end
+	
+	local targetX = cfg.sideAmount * (math.random() - 0.5) * 2 * randomMult() * multiplier
+	local targetY = cfg.recoilAmount * randomMult() * multiplier
+	
+	table.insert(self.ActiveRecoils, {
+		elapsedTime = 0,
+		target = Vector2.new(targetX, targetY),
+		isRising = true,
+		config = cfg
+	})
+end
+
+--[[
+function CameraController:HitPause(duration: number)
+	local startTime = os.clock()
+	while os.clock() - startTime < duration do
+		-- Busy wait to simulate frame freeze
+		-- Note: This is usually discouraged but specifically requested for "frame freeze" feedback
+	end
+end
+]]
 
 function CameraController:HitPause(duration: number)
 	local startTime = os.clock()

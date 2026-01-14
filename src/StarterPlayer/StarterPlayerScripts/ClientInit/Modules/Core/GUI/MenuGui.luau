@@ -24,14 +24,14 @@ function MenuGui:Init(Core)
 	self.ClientDataController = Core:Get("ClientDataController")
     self.ScreenGuiController = Core:Get("ScreenGuiController")
     self.MouseController = Core:Get("MouseController")
-    self.GameStatusEvent = Core:Get("SharedRemotes"):GetEvent("GameStatusEvent")
+    self.CharacterEvent = Core:Get("SharedRemotes"):GetEvent("CharacterEvent")
 	self.InventoryEvent = Core:Get("SharedRemotes"):GetEvent("InventoryEvent")
 
 	--loads menu components--
-	self:InitProgressionGui()
-	self:InitCurrencyGui()
-	self:InitBottomFrame()
-	self:InitInventoryGui()
+--	self:InitProgressionGui()
+--	self:InitCurrencyGui()
+--	self:InitBottomFrame()
+--	self:InitInventoryGui()
 end
 
 function MenuGui:Start() end
@@ -112,7 +112,7 @@ function MenuGui:InitBottomFrame()
 			
 				--button functionality goes here--
 				if UIFrame == PlayButton then
-                    self.GameStatusEvent:Fire(true, "RequestJoin")
+                    self.CharacterEvent:Invoke(8, "Spawn")
 				elseif UIFrame == StoreButton then
                     self.ScreenGuiController:SetScreen("Store")
 				elseif UIFrame == SettingsButton then
