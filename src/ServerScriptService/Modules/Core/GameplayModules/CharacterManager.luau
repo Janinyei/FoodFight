@@ -13,14 +13,13 @@ local Signal = require(Modules.Utils.Signal)
 
 function CharacterManager:Init(Core)
 	self.StatusEffectManager = Core:Get("StatusEffectManager")
-	self.KillEffectsManager = Core:Get("KillEffectsManager")
 
 	self.FoodCombatManager = Core:Get("FoodCombatManager")
 
 	self.GameManager = Core:Get("GameManager")
 	self.SharedRemotes = Core:Get("SharedRemotes")
 	self.CombatEvent = self.SharedRemotes:GetEvent("CombatEvent")
-	self.RespawnTime = 8 --typical respawn time
+	self.RespawnTime = 5 --typical respawn time
 	self.CharacterEvent = self.SharedRemotes:GetEvent("CharacterEvent")
 end
 
@@ -39,31 +38,14 @@ function CharacterManager:Start()
 
 	Players.PlayerAdded:Connect(function(player)
 		player.CharacterAdded:Connect(function(char)
+			char.Archivable = true --allows character model cloning
 			--setup ragdoll constraints--
 			local hum = char:WaitForChild("Humanoid")
 			hum.BreakJointsOnDeath = false
 			self:_setupRagdollConstraints(char)
 
 			hum.Died:Connect(function()
-				self:EnableRagdoll(char)
-
-				print(hum.RootPart)
-				char.HumanoidRootPart:SetNetworkOwner(player)
-
-				--	hum.RootPart:ApplyImpulse(hum.RootPart:GetMass() * Vector3.yAxis * 500)
-				--	hum.RootPart:ApplyAngularImpulse(hum.RootPart:GetMass() * Vector3.one * math.random(100, 500))
-
-				local activePlrIndex = table.find(self.GameManager.ActivePlayers, player)
-				if activePlrIndex then
-					table.remove(self.GameManager.ActivePlayers, activePlrIndex)
-				end
-
-				local elimData = self.FoodCombatManager:ProcessElimination(player)
-				self.KillEffectsManager:StartKillEffect(player, elimData)
-
-				task.delay(self.RespawnTime, function()
-					self:SpawnCharacter(player)
-				end)
+				self:OnDeath(player, char)
 			end)
 		end)
 
@@ -88,6 +70,38 @@ function CharacterManager:Start()
 		if effectName == "Ragdoll" then
 			self:DisableRagdoll(plr.Character)
 		end
+	end)
+end
+
+function CharacterManager:OnDeath(player, char)
+	self:EnableRagdoll(char)
+
+	char.PrimaryPart:SetNetworkOwner(player) --needed to control
+
+	local corpse = char:Clone()
+	corpse.Parent = workspace.VisualEffectsCache
+	corpse.HumanoidRootPart.CFrame = char.HumanoidRootPart.CFrame
+	corpse.Humanoid.Health = math.huge
+	corpse.Humanoid.MaxHealth = math.huge
+	corpse.PrimaryPart:SetNetworkOwner(player)
+	player.Character:Destroy()
+	player.Character = nil
+
+	--	hum.RootPart:ApplyImpulse(hum.RootPart:GetMass() * Vector3.yAxis * 500)
+	--	hum.RootPart:ApplyAngularImpulse(hum.RootPart:GetMass() * Vector3.one * math.random(100, 500))
+
+	--[[]]
+	local activePlrIndex = table.find(self.GameManager.ActivePlayers, player)
+	if activePlrIndex then
+		table.remove(self.GameManager.ActivePlayers, activePlrIndex)
+	end
+
+	--handles killcam, kill effects, and more i think
+	self.FoodCombatManager:ProcessElimination(player, corpse)
+
+	--test respawning, delete later:
+	task.delay(self.RespawnTime, function()
+		self:SpawnCharacter(player)
 	end)
 end
 

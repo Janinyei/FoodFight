@@ -11,9 +11,12 @@ local CollectionService = game:GetService("CollectionService")
 function FoodCombatManager:Init(Core)
 	self.ProjectileManager = Core:Get("ProjectileManager")
 	self.CombatEvent = Core:Get("SharedRemotes"):GetEvent("CombatEvent")
+	self.DeathEvent = Core:Get("SharedRemotes"):GetEvent("DeathEvent")
+
 	self.FoodServerModuleFolder = ServerScriptService.Modules.Core.FoodServerModules
 	self.EnergyManager = Core:Get("EnergyManager")
 	self.ComboManager = Core:Get("ComboManager")
+	self.DataManager = Core:Get("DataManager")
 	self.DamageHistory = {
 		--[[Player] = { 
 		[Player] = {
@@ -27,6 +30,8 @@ function FoodCombatManager:Init(Core)
 	self.UltimatePlayers = {} --list of players whose ultimate is activated
 
 	self.CombatEnabled = true
+
+	
 
 	for _, module in self.FoodServerModuleFolder:GetChildren() do
 		local Name = string.gsub(module.Name, "Server", "")
@@ -151,8 +156,6 @@ function FoodCombatManager:DamageCharacter(
 			}
 		end
 
-		
-
 		self.DamageHistory[TargetPlayer][Attacker].DamageAmount += 1
 		self.DamageHistory[TargetPlayer][Attacker].Time = os.clock()
 	end
@@ -199,83 +202,94 @@ function FoodCombatManager:DamageCharacter(
 	})
 end
 
---process elimination and return elimination data 
-function FoodCombatManager:ProcessElimination(player) : {}
-    local DamageHistory = self.DamageHistory[player]
-    
-    if not DamageHistory then return end
+--process elimination and return elimination data
+function FoodCombatManager:ProcessElimination(player, corpse): {}
+	local DamageHistory = self.DamageHistory[player]
 
-    local Killer = nil
-    local AssistantCandidates = {}
-    local Assistants = {}
-    
-    local LatestTime = -999
-    local Now = os.clock()
+	if not DamageHistory then
+		--	return
+	end
 
-    -- Constants
-    local damageWindow = 15 
-    local maxAssistants = 2 
+	local Killer = nil
+	local AssistantCandidates = {}
+	local Assistants = {}
 
-    -- 1. Identify Killer and potential candidates
-    for attackingPlr, damageData in pairs(DamageHistory) do
-        -- damageData structure: {Amount = number, Time = number, FoodName = string}
-        local timeSinceHit = Now - damageData.Time
+	local LatestTime = -999
+	local Now = os.clock()
 
-        if timeSinceHit <= damageWindow then
-            -- The person who hit most recently is the Killer
-            if damageData.Time > LatestTime then
-                -- If we already had a "Killer", move them to assistant candidates
-                if Killer then
-                    table.insert(AssistantCandidates, {Player = Killer, Amount = DamageHistory[Killer].Amount})
-                end
-                
-                Killer = attackingPlr
-                LatestTime = damageData.Time
-            else
-                -- Otherwise, they are an assistant candidate
-                table.insert(AssistantCandidates, {Player = attackingPlr, Amount = damageData.Amount})
-            end
-        end
-    end
+	-- Constants
+	local damageWindow = 15
+	local maxAssistants = 2
 
-    -- 2. Sort Assistant Candidates by Damage (Highest to Lowest)
-    table.sort(AssistantCandidates, function(a, b)
-        return a.Amount > b.Amount
-    end)
+	if DamageHistory then
+		-- 1. Identify Killer and potential candidates
+		for attackingPlr, damageData in pairs(DamageHistory) do
+			-- damageData structure: {Amount = number, Time = number, FoodName = string}
+			local timeSinceHit = Now - damageData.Time
 
-    -- 3. Pick the top X assistants
-    for i = 1, math.min(#AssistantCandidates, maxAssistants) do
-        table.insert(Assistants, AssistantCandidates[i].Player)
-    end
+			if timeSinceHit <= damageWindow then
+				-- The person who hit most recently is the Killer
+				if damageData.Time > LatestTime then
+					-- If we already had a "Killer", move them to assistant candidates
+					if Killer then
+						table.insert(AssistantCandidates, { Player = Killer, Amount = DamageHistory[Killer].Amount })
+					end
 
-    -- 4. Fire to all clients
-    -- We send the Victim, Killer, Assistants, and the weapon used (from the killer's data)
-    local weaponUsed = Killer and DamageHistory[Killer].FoodName 
+					Killer = attackingPlr
+					LatestTime = damageData.Time
+				else
+					-- Otherwise, they are an assistant candidate
+					table.insert(AssistantCandidates, { Player = attackingPlr, Amount = damageData.Amount })
+				end
+			end
+		end
+
+		-- 2. Sort Assistant Candidates by Damage (Highest to Lowest)
+		table.sort(AssistantCandidates, function(a, b)
+			return a.Amount > b.Amount
+		end)
+
+		-- 3. Pick the top X assistants
+		for i = 1, math.min(#AssistantCandidates, maxAssistants) do
+			table.insert(Assistants, AssistantCandidates[i].Player)
+		end
+	end
+	--if the killer is still nonexistent at this point, for now just assume a self kill do
+	if not Killer then
+		Killer = player
+	end
+	-- 4. Fire to all clients
+	-- We send the Victim, Killer, Assistants, and the weapon used (from the killer's data)
+local weaponUsed = Killer ~= player and DamageHistory[Killer].FoodName
 	local EliminationData = {
-		   Victim = player,
-		   Killer = Killer,
-		   Assistants = Assistants,
-		   Weapon = weaponUsed,
-		   IsHeadshot = false -- You can pass this through if you track it in damageData
-	   }
-    
-    self.CombatEvent:FireAllClients("Elimination", EliminationData)
-
+		Victim = player,
+		Killer = Killer,
+		KillEffect = self.DataManager:GetData(Killer).Inventory.Equipped.KillEffects or "Default",
+		Assistants = Assistants,
+		Cause = weaponUsed,
+		IsHeadshot = false, -- You can pass this through if you track it in damageData
+		Corpse = corpse
+	}
 
 	--Increase Points--
-	self.MatchStatsManager:Increment(Killer, "Points", 100)
-
-	self.KillEffectsManager:StartKillEffect(player, EliminationData)
+	if Killer ~= player then
+		self.MatchStatsManager:Increment(Killer, "Points", 100)
+	end
 
 	--assistants
-
 	for _, plr in Assistants do
 		self.MatchStatsManager:Increment(plr, "Points", 50)
 	end
 
-    -- 5. Cleanup
-    self.DamageHistory[player] = nil
+	--fire to clients to handle kill cam and kill effects
+	self.DeathEvent:Fires(true, EliminationData)
 
+	-- 5. Cleanup
+	self.DamageHistory[player] = nil
+
+	
+
+	print(EliminationData)
 	return EliminationData
 end
 

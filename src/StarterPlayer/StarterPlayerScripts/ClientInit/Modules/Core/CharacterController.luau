@@ -95,7 +95,7 @@ function CharacterController:SetupCharacter(char: Model)
 		characterRotSpeed = 5,
 		tiltSpeed = 10,
 		maxTiltAngle = 10,
-		rotateHRPWithCamera = true,
+		rotateHRPWithCamera = false,
 		defaultC0 = self.HRP.RootJoint.C0,
 
 		--vaulting--
@@ -399,6 +399,10 @@ function CharacterController:_updateHRPOrientation(dt)
 
 	--guard clause--
 	if not self.ParkourConfig.rotateHRPWithCamera then
+		local ao = hrp:FindFirstChild("CamOrientation")
+		if ao then
+			ao.Enabled = false
+		end
 		hum.AutoRotate = true
 		return
 	end
@@ -407,8 +411,16 @@ function CharacterController:_updateHRPOrientation(dt)
 
 	local _, y, _ = Camera.CFrame:ToOrientation()
 
-	hrp.CFrame =
-		hrp.CFrame:Lerp(CFrame.new(hrp.Position) * CFrame.Angles(0, y, 0), dt * 5 * ParkourConfig.characterRotSpeed)
+	local ao = hrp:FindFirstChild("CamOrientation") or Instance.new("AlignOrientation")
+	ao.Name = "CamOrientation"
+	ao.Mode = Enum.OrientationAlignmentMode.OneAttachment
+	ao.RigidityEnabled = false
+	ao.MaxTorque = 1000000
+	ao.Responsiveness = 30 -- Smooth but responsive
+	ao.Attachment0 = hrp.RootAttachment
+	ao.CFrame = CFrame.Angles(0, y, 0)
+	ao.Parent = hrp
+	ao.Enabled = true
 end
 
 function CharacterController:_humanoidDied()
@@ -538,7 +550,7 @@ function CharacterController:_deactivateSlide()
 
 	self.ParkourStates:ClearState()
 	self.Humanoid:ChangeState(Enum.HumanoidStateType.Running)
-	self.ParkourConfig.rotateHRPWithCamera = true
+	self.ParkourConfig.rotateHRPWithCamera = self.CameraController.ShiftLockEnabled or false
 
 	-- Disable constraints
 	local ao = self.HRP:FindFirstChild("SlideOrientation")

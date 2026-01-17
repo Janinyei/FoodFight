@@ -45,8 +45,10 @@ function GameManager:Init(Core)
 	self.Timer = Timer.new(INTERMISSION_TIME)
 	self.CurrentMode = nil
 	self.TimerEvent = Core:Get("SharedRemotes"):GetEvent("TimerEvent")
+	self.SpectateEvent = Core:Get("SharedRemotes"):GetEvent("SpectateEvent")
 	self.MatchStatsManager = Core:Get("MatchStatsManager")
 
+	
 	--mode table--
 	self.ModesTable = {} --table of loaded modules
 	self:InitModes(Core)
@@ -95,6 +97,11 @@ function GameManager:Start()
 			self.CurrentMode:OnComplete()
 		end
 
+	end)
+
+
+	self.SpectateEvent:Connect(function(player)
+		return self.ActivePlayers
 	end)
 end
 
