@@ -17,6 +17,8 @@ function FoodCombatManager:Init(Core)
 	self.EnergyManager = Core:Get("EnergyManager")
 	self.ComboManager = Core:Get("ComboManager")
 	self.DataManager = Core:Get("DataManager")
+	self.MatchStatsManager = Core:Get("MatchStatsManager")
+	self._npcDeathConnections = setmetatable({}, { __mode = "k" })
 	self.DamageHistory = {
 		--[[Player] = { 
 		[Player] = {
@@ -139,25 +141,34 @@ function FoodCombatManager:DamageCharacter(
 
 	--handle damage
 	--tag humanoid logic--
-	if Attacker and TargetPlayer then
-		local DamageHistory = self.DamageHistory[TargetPlayer]
+	if Attacker then
+		local victimKey = TargetPlayer or TargetCharacter
+		local DamageHistory = self.DamageHistory[victimKey]
 
 		if not DamageHistory then
-			self.DamageHistory[TargetPlayer] = {}
+			self.DamageHistory[victimKey] = {}
 		end
 
 		--make sure to wipe when target dies or when round ends
-		local AttackerHistory = self.DamageHistory[TargetPlayer][Attacker]
+		local AttackerHistory = self.DamageHistory[victimKey][Attacker]
 
 		if not AttackerHistory then
-			self.DamageHistory[TargetPlayer][Attacker] = {
-				DamageAmount = 0,
-				CombatInfo.FoodName,
+			self.DamageHistory[victimKey][Attacker] = {
+				Amount = 0,
+				Time = os.clock(),
+				FoodName = CombatInfo and CombatInfo.FoodName,
 			}
 		end
 
-		self.DamageHistory[TargetPlayer][Attacker].DamageAmount += 1
-		self.DamageHistory[TargetPlayer][Attacker].Time = os.clock()
+		self.DamageHistory[victimKey][Attacker].Amount += Amount
+		self.DamageHistory[victimKey][Attacker].Time = os.clock()
+
+		if not TargetPlayer and not self._npcDeathConnections[Humanoid] then
+			self._npcDeathConnections[Humanoid] = Humanoid.Died:Connect(function()
+				self._npcDeathConnections[Humanoid] = nil
+				self:ProcessElimination(TargetCharacter, TargetCharacter)
+			end)
+		end
 	end
 
 	local comboCount = 0
@@ -188,23 +199,20 @@ function FoodCombatManager:DamageCharacter(
 		})
 	end
 
-	if not TargetPlayer then
-		return
+	if TargetPlayer then
+		self.ComboManager:Reset(TargetPlayer, "took_damage")
+		self.CombatEvent:Fire(true, TargetPlayer, "DamageReceived", {
+			Attacker = Attacker,
+			Amount = finalAmount,
+			BaseAmount = Amount,
+			Combat = CombatInfo or {},
+		})
 	end
-
-	self.ComboManager:Reset(TargetPlayer, "took_damage")
-
-	self.CombatEvent:Fire(true, TargetPlayer, "DamageReceived", {
-		Attacker = Attacker,
-		Amount = finalAmount,
-		BaseAmount = Amount,
-		Combat = CombatInfo or {},
-	})
 end
 
 --process elimination and return elimination data
-function FoodCombatManager:ProcessElimination(player, corpse): {}
-	local DamageHistory = self.DamageHistory[player]
+function FoodCombatManager:ProcessElimination(victim, corpse): {}
+	local DamageHistory = self.DamageHistory[victim]
 
 	if not DamageHistory then
 		--	return
@@ -256,15 +264,26 @@ function FoodCombatManager:ProcessElimination(player, corpse): {}
 	end
 	--if the killer is still nonexistent at this point, for now just assume a self kill do
 	if not Killer then
-		Killer = player
+		if typeof(victim) == "Instance" and victim:IsA("Player") then
+			Killer = victim
+		end
 	end
 	-- 4. Fire to all clients
 	-- We send the Victim, Killer, Assistants, and the weapon used (from the killer's data)
-local weaponUsed = Killer ~= player and DamageHistory[Killer].FoodName
+	local weaponUsed
+	if Killer and Killer ~= victim and DamageHistory and DamageHistory[Killer] then
+		weaponUsed = DamageHistory[Killer].FoodName
+	end
+
+	local killEffect = "Default"
+	if Killer and typeof(Killer) == "Instance" and Killer:IsA("Player") then
+		killEffect = self.DataManager:GetData(Killer).Inventory.Equipped.KillEffects or "Default"
+	end
+
 	local EliminationData = {
-		Victim = player,
+		Victim = victim,
 		Killer = Killer,
-		KillEffect = self.DataManager:GetData(Killer).Inventory.Equipped.KillEffects or "Default",
+		KillEffect = killEffect,
 		Assistants = Assistants,
 		Cause = weaponUsed,
 		IsHeadshot = false, -- You can pass this through if you track it in damageData
@@ -272,7 +291,7 @@ local weaponUsed = Killer ~= player and DamageHistory[Killer].FoodName
 	}
 
 	--Increase Points--
-	if Killer ~= player then
+	if Killer and typeof(Killer) == "Instance" and Killer:IsA("Player") and Killer ~= victim then
 		self.MatchStatsManager:Increment(Killer, "Points", 100)
 	end
 
@@ -285,7 +304,7 @@ local weaponUsed = Killer ~= player and DamageHistory[Killer].FoodName
 	self.DeathEvent:Fires(true, EliminationData)
 
 	-- 5. Cleanup
-	self.DamageHistory[player] = nil
+	self.DamageHistory[victim] = nil
 
 	
 

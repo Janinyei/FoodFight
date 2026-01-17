@@ -9,11 +9,17 @@ function Blackhole:PlayKillEffect(data, Core)
 
 	local Duration = 4
 
-	local TargetPos = TargetCharacter.HumanoidRootPart.Position + Vector3.yAxis * 10
+	local hrp = TargetCharacter:FindFirstChild("HumanoidRootPart")
+	if not hrp then
+		return
+	end
+
+	local TargetPos = hrp.Position + Vector3.yAxis * 10
+	local torso = TargetCharacter:FindFirstChild("Torso") or TargetCharacter:FindFirstChild("UpperTorso") or hrp
 
 	local FloatAttachment = Instance.new("Attachment")
 
-	FloatAttachment.Parent = TargetCharacter.Torso
+	FloatAttachment.Parent = torso
 
 	local DragAP = Instance.new("AlignPosition")
 
@@ -33,7 +39,7 @@ function Blackhole:PlayKillEffect(data, Core)
 
 	AudioController:PlayAudio({
 		Name = "blackhole_warp",
-		Source = TargetCharacter.HumanoidRootPart,
+		Source = hrp,
 	})
 	DragAP.Enabled = true
 

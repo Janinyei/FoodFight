@@ -135,7 +135,7 @@ module.DefaultData = {
 			Food = "Banana",
 			Trails = "Basic",
 			Auras = "idk", --can't set to nil cuz ProfileStore deletes nil keys
-			KillEffects = "Blackhole",
+			KillEffects = "LaserEyes",
 		},
 
 		Food = {
@@ -170,6 +170,11 @@ module.DefaultData = {
 		KillEffects = {
 			Blackhole = {
 				Name = "Blackhole",
+				Type = "KillEffects",
+				Amount = 1
+			},
+			LaserEyes = {
+				Name = "LaserEyes",
 				Type = "KillEffects",
 				Amount = 1
 			}

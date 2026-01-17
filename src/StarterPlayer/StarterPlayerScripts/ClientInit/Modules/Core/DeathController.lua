@@ -17,11 +17,14 @@ end
 function DeathController:Start(Core)
 	self.DeathEvent:Connect(function(eliminationData)
 		local targetPlayer = eliminationData.Victim
-		self.CameraController:Spectate(eliminationData.Corpse)
+		if targetPlayer == LocalPlayer then
+			self.CameraController:Spectate(eliminationData.Corpse)
+		end
 
 		self:PlayKillEffect(eliminationData.KillEffect, {
 			TargetCharacter = eliminationData.Corpse,
 			Killer = eliminationData and eliminationData.Killer,
+			Victim = eliminationData and eliminationData.Victim,
 		}, Core)
 
 
@@ -42,8 +45,19 @@ self.KillfeedGui:AddKill(eliminationData)
 end
 
 function DeathController:PlayKillEffect(effectName: string, data, Core)
-	if KillEffectsFolder:FindFirstChild(effectName) then
-		require(KillEffectsFolder[effectName]):PlayKillEffect(data, Core)
+	local effectModule = KillEffectsFolder:FindFirstChild(effectName)
+	if not effectModule then
+		local lowered = string.lower(effectName)
+		for _, child in KillEffectsFolder:GetChildren() do
+			if string.lower(child.Name) == lowered then
+				effectModule = child
+				break
+			end
+		end
+	end
+
+	if effectModule then
+		require(effectModule):PlayKillEffect(data, Core)
 	end
 end
 
