@@ -12,6 +12,7 @@ export type ProjectileData = {
 	Acceleration: Vector3?,
 	MaxBounces: number?,
 	MaxDistance: number,
+	HitRadius: number?,
 	Update: ((deltaTime: number, projectile: any) -> any)?,
 	RaycastParams: RaycastParams,
 	IsReplicated: boolean?,
@@ -126,6 +127,7 @@ function Projectile.new(data: ProjectileData)
 	self.BounceCount = 0
 	self.MaxBounces = data.MaxBounces or 3
 	self.RaycastParams = data.RaycastParams or RaycastParams.new()
+	self.HitRadius = data.HitRadius or 0
 	
 	-- Rotation properties
 	self.AngularVelocity = data.AngularVelocity or Vector3.new(
@@ -234,13 +236,13 @@ function Projectile:CheckHit(startPos: Vector3, endPos: Vector3)
 		return nil 
 	end
 	
-	local raycast = workspace:Raycast(
-		startPos, 
-		direction.Unit * (distance + MAX_RAYCAST_DISTANCE),
-		self.RaycastParams
-	)
-	
-	return raycast
+	local castDirection = direction.Unit * (distance + MAX_RAYCAST_DISTANCE)
+
+	if self.HitRadius > 0 and workspace.Spherecast then
+		return workspace:Spherecast(startPos, self.HitRadius, castDirection, self.RaycastParams)
+	end
+
+	return workspace:Raycast(startPos, castDirection, self.RaycastParams)
 end
 
 function Projectile:Bounce(hitNormal: Vector3)
@@ -286,6 +288,7 @@ function Projectile:GetData()
 		MaxHits = self.MaxHits,
 		CurrentHits = self.CurrentHits,
 		BounceCount = self.BounceCount,
+		HitRadius = self.HitRadius,
 		IncludeModelInCleanup = self.IncludeModelInCleanup
 	}
 end

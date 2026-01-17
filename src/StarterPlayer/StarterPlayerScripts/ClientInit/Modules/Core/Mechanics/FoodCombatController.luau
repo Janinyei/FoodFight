@@ -12,6 +12,10 @@ local Utils = Modules.Utils
 
 --Imports--
 local Signal = require(Utils.Signal)
+local Functions = require(Utils.Functions)
+local Effects = Modules.Effects
+local FoodSplat = require(Effects.FoodSplat)
+local PoofClouds = require(Effects.PoofClouds)
 
 --Variables--
 local LocalPlayer = Players.LocalPlayer
@@ -21,6 +25,15 @@ local FoodModels = ReplicatedStorage.Assets.FoodModels
 local FoodModuleFolder = script.Parent.Food
 
 local FoodCombatController = {}
+
+local function getModelColor(model: Model | BasePart): Color3?
+	if model:IsA("BasePart") then
+		return model.Color
+	end
+
+	local part = model:FindFirstChildWhichIsA("BasePart", true)
+	return part and part.Color or nil
+end
 
 --setup dependencies, events, signals, remotes, etc
 function FoodCombatController:Init(Core)
@@ -53,6 +66,7 @@ function FoodCombatController:Init(Core)
 	self.UltimateDeactivated = Signal.new()
 	self.Fired = Signal.new()
 	self.PlayerEliminated = Signal.new()
+	self.ProjectileHitLocal = Signal.new()
 
 	--loading food modules--
 	self.FoodModules = {}
@@ -101,6 +115,8 @@ function FoodCombatController:Start()
 				self.CameraController:ToggleAimZoom(false)
 			end
 		end
+		
+		return Enum.ContextActionResult.Pass
 	end
 
 	CAS:BindAction(
@@ -121,6 +137,9 @@ function FoodCombatController:StartAim()
 	local FoodModule = self.FoodModules[self.CurrentFood]
 	local HRP = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
 	
+	if self._prevRotateHRPWithCamera == nil and self.CharacterController and self.CharacterController.ParkourConfig then
+		self._prevRotateHRPWithCamera = self.CharacterController.ParkourConfig.rotateHRPWithCamera
+	end
 	self.CharacterController.ParkourConfig.rotateHRPWithCamera = true
 
 	if self.FoodModules[self.CurrentFood].Aim then
@@ -140,7 +159,12 @@ function FoodCombatController:StartAim()
 end
 
 function FoodCombatController:StopAim()
-	self.CharacterController.ParkourConfig.rotateHRPWithCamera = false
+	if self._prevRotateHRPWithCamera ~= nil then
+		self.CharacterController.ParkourConfig.rotateHRPWithCamera = self._prevRotateHRPWithCamera
+	else
+		self.CharacterController.ParkourConfig.rotateHRPWithCamera = true
+	end
+	self._prevRotateHRPWithCamera = nil
 	if self.FoodModules[self.CurrentFood].StopAim then
 		self.FoodModules[self.CurrentFood]:StopAim()
 		return
@@ -261,6 +285,25 @@ function FoodCombatController:FireNormal()
 					},
 				},
 			}
+			
+			local character = Functions.FindCharacter(HitResult.Instance)
+			if character then
+				self.ProjectileHitLocal:Fire({
+					Character = character,
+					HitResult = HitResult,
+					Combat = hitData.Combat,
+				})
+				self.CameraController:Shake("FoodHit")
+			else
+				FoodSplat:Play({
+					Obj = HitResult.Instance,
+					Position = HitResult.Position,
+					Normal = HitResult.Normal,
+					Radius = math.clamp((Projectile.HitRadius or 1) * 3, 2, 6),
+					Color = getModelColor(Projectile.Model),
+				})
+			end
+
 			self.CombatEvent:Fire(true, "Hit", hitData)
 		end
 	end)
@@ -353,6 +396,26 @@ function FoodCombatController:FireUltimate()
 					},
 				},
 			}
+			
+			local character = Functions.FindCharacter(HitResult.Instance)
+			if character then
+				self.ProjectileHitLocal:Fire({
+					Character = character,
+					HitResult = HitResult,
+					Combat = hitData.Combat,
+				})
+				PoofClouds:Play({ Position = HitResult.Position })
+				self.CameraController:Shake("FoodHit")
+			else
+				FoodSplat:Play({
+					Obj = HitResult.Instance,
+					Position = HitResult.Position,
+					Normal = HitResult.Normal,
+					Radius = math.clamp((Projectile.HitRadius or 1) * 4, 3, 8),
+					Color = getModelColor(Projectile.Model),
+				})
+			end
+
 			self.CombatEvent:Fire(true, "Hit", hitData)
 		end
 	end)
@@ -380,7 +443,7 @@ function FoodCombatController:FireReplicated(data)
 	if FoodClientModule.FireReplicated then
 	FoodClientModule:FireReplicated(data) --runs custom fire replicate function
 	else
-		self.ProjectileController:FireProjectile(FoodModels[self.CurrentFood]:Clone() ,data.Projectile) --otherwise handle default implementation
+		self.ProjectileController:FireProjectile(FoodModels[AttackerFood]:Clone() ,data.Projectile) --otherwise handle default implementation
 	end
 
 	if FoodClientModule.OnFireReplicated then

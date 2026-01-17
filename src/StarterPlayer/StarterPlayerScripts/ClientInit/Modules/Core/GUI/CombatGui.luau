@@ -43,6 +43,7 @@ function CombatGui:Init(Core)
 	self.ComboStroke = nil
 	self.LastComboCount = 0
 	self.LastComboUpdateTime = 0
+	self.LastHitmarkerTime = 0
 end
 
 function CombatGui:Start()
@@ -51,12 +52,21 @@ function CombatGui:Start()
 	self.DamageDealt = self.FoodCombatController.DamageDealt
 	self.DamageReceived = self.FoodCombatController.DamageReceived
 	self.PlayerEliminated = nil --maybe lol
+	
+	local function tryShowHitmarker(duration: number)
+		local now = os.clock()
+		if now - self.LastHitmarkerTime < 0.12 then
+			return
+		end
+		self.LastHitmarkerTime = now
+		self:ShowHitmarker(duration)
+	end
 
 	self.DamageDealt:Connect(function(data)
 		print(data)
 
 		self:ShowDamageIndicator(data.TargetCharacter, data.Amount)
-		self:ShowHitmarker(0.35)
+		tryShowHitmarker(0.35)
 
 		self:UpdateComboFromDamageDealt(data)
 
@@ -64,6 +74,12 @@ function CombatGui:Start()
 		self:FeedbackMessage(data.TargetPlayer, "Elimination!", 100)
 		end
 	end)
+	
+	if self.FoodCombatController.ProjectileHitLocal then
+		self.FoodCombatController.ProjectileHitLocal:Connect(function()
+			tryShowHitmarker(0.22)
+		end)
+	end
 
 	self.DamageReceived:Connect(function(data)
 		print(data)
