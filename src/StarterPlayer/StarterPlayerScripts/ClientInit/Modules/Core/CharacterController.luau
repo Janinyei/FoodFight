@@ -69,6 +69,22 @@ function CharacterController:SetupCharacter(char: Model)
 
 	self.MultiJump = self._janitor:Add(Signal.new())
 
+	do
+		local hrp = self.HRP
+		local ao = hrp:FindFirstChild("CameraOrientation") or Instance.new("AlignOrientation")
+		ao.Name = "CameraOrientation"
+		ao.Attachment0 = hrp.RootAttachment
+		ao.Mode = Enum.OrientationAlignmentMode.OneAttachment
+		ao.PrimaryAxisOnly = false
+		ao.ReactionTorqueEnabled = false
+		ao.RigidityEnabled = false
+		ao.MaxTorque = 100000000
+		ao.Responsiveness = 100
+		ao.Parent = hrp
+		ao.Enabled = false
+		self.CameraOrientation = ao
+	end
+
 
 
 	self.ParkourConfig = {
@@ -372,6 +388,10 @@ end
 --controls leaning and root part orientation
 function CharacterController:_updateHRPOrientation(dt)
 	if self.ParkourStates:IsState("Sliding") then
+		local cameraOrientation = self.CameraOrientation
+		if cameraOrientation then
+			cameraOrientation.Enabled = false
+		end
 		return
 	end
 	--shortened variables
@@ -400,15 +420,22 @@ function CharacterController:_updateHRPOrientation(dt)
 	--guard clause--
 	if not self.ParkourConfig.rotateHRPWithCamera then
 		hum.AutoRotate = true
+		local cameraOrientation = self.CameraOrientation
+		if cameraOrientation then
+			cameraOrientation.Enabled = false
+		end
 		return
 	end
 
 	hum.AutoRotate = false
 
 	local _, y, _ = Camera.CFrame:ToOrientation()
-
-	hrp.CFrame =
-		hrp.CFrame:Lerp(CFrame.new(hrp.Position) * CFrame.Angles(0, y, 0), dt * 5 * ParkourConfig.characterRotSpeed)
+	local cameraOrientation = self.CameraOrientation
+	if cameraOrientation then
+		cameraOrientation.Enabled = true
+		cameraOrientation.Responsiveness = 25 * ParkourConfig.characterRotSpeed
+		cameraOrientation.CFrame = CFrame.new(hrp.Position) * CFrame.Angles(0, y, 0)
+	end
 end
 
 function CharacterController:_humanoidDied()
@@ -453,6 +480,11 @@ function CharacterController:_activateSlide()
 			self.ParkourConfig.rotateHRPWithCamera = false
 			hum.AutoRotate = false
 		--	hum:ChangeState(Enum.HumanoidStateType.PlatformStanding)
+
+			local cameraOrientation = self.CameraOrientation
+			if cameraOrientation then
+				cameraOrientation.Enabled = false
+			end
 
 			--setup align orientation
 			local ao = hrp:FindFirstChild("SlideOrientation") or Instance.new("AlignOrientation")

@@ -32,16 +32,8 @@ end
 
 function PickupManager:Start()
 	local spawnZone = workspace.Zones.SpawnZone
-	local parts = {}
-	if spawnZone:IsA("BasePart") then
-		table.insert(parts, spawnZone)
-	else
-		for _, inst in spawnZone:GetDescendants() do
-			if inst:IsA("BasePart") then
-				table.insert(parts, inst)
-			end
-		end
-	end
+	local parts = spawnZone:IsA("BasePart") and {spawnZone, unpack(spawnZone:QueryDescendants("BasePart"))} 
+		or spawnZone:QueryDescendants("BasePart")
 
 	local rayParams = RaycastParams.new()
 	rayParams.FilterType = Enum.RaycastFilterType.Exclude

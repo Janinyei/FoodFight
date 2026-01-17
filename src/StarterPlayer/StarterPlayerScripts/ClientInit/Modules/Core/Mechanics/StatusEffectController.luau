@@ -22,7 +22,7 @@ function StatusEffectController:Init(Core)
 		SpeedBoost = {
 			Multiplier = 1.35,
 			SpeedLinesRate = 160,
-			VignetteColor = Color3.fromRGB(57, 169, 255),
+			VignetteColor = Color3.fromRGB(0, 128, 255),
 			VignetteTargetTransparency = 0.5,
 			VignetteInitialTransparency = 0.6,
 		},
