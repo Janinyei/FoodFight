@@ -36,6 +36,7 @@ function ProjectileController:Init(Core)
 	self.AlwaysExcludedInstances = { DebugInstanceFolder, workspace.VisualEffectsCache }
 	self.Blacklist = { DebugInstanceFolder, workspace.VisualEffectsCache }
 	self.RaycastParams.FilterDescendantsInstances = self.Blacklist
+	self.DefaultHitRadius = 0.85
 
 	--Core modules/events
 	self.Core = Core
@@ -89,6 +90,10 @@ function ProjectileController:FireProjectile(Obj: Model | BasePart, ProjectileDa
 		warn("cannot shoot projectile with no data")
 		return
 	end
+	
+	if ProjectileData.HitRadius == nil then
+		ProjectileData.HitRadius = self.DefaultHitRadius
+	end
 
 	-- Add to blacklist
 	table.insert(self.Blacklist, Obj)
@@ -105,8 +110,11 @@ function ProjectileController:FireProjectile(Obj: Model | BasePart, ProjectileDa
 		ReplicatedProjectiles[ProjectileData.Id] = NewProj
 		--sets up different raycast params to avoid conflicts
 		local RayParams = RaycastParams.new()
-		RayParams.FilterDescendantsInstances =
-			{ self.AlwaysExcludedInstances, NewProj.Owner.Character}
+		local filter = { DebugInstanceFolder, workspace.VisualEffectsCache, Obj }
+		if NewProj.Owner.Character then
+			table.insert(filter, NewProj.Owner.Character)
+		end
+		RayParams.FilterDescendantsInstances = filter
 		RayParams.FilterType = Enum.RaycastFilterType.Exclude
 		NewProj.RaycastParams = RayParams
 	else
