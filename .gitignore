@@ -4,3 +4,10 @@
 # Roblox Studio lock files
 /*.rbxlx.lock
 /*.rbxl.lock
+.trae/skills/smart_reuse/SKILL.md
+.trae/skills/senior_roblox_dev/SKILL.md
+.trae/skills/refactor_human/SKILL.md
+.trae/skills/no_overdefensive/SKILL.md
+.trae/skills/engine_optimized/SKILL.md
+.trae/skills/clean_luau/SKILL.md
+.gitignore

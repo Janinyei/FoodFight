@@ -8,12 +8,14 @@ function PickupManager:Init(Core)
 	self.StatusEffectManager = Core:Get("StatusEffectManager")
 
 	self.Config = {
-		MaxActive = 10,
-		SpawnInterval = 3.5,
-		PickupLifetime = 25,
+		MaxActive = 15,
+		SpawnInterval = 3.0,
+		PickupLifetime = 30,
 		RaycastHeight = 80,
 		RaycastDepth = 250,
 		PickupGroundOffset = 1.25,
+		DetectionRange = 6,
+		DetectionFrequency = 0.1,
 	}
 
 	self.ActivePickups = {}
@@ -27,7 +29,7 @@ function PickupManager:Init(Core)
 		local def = require(moduleScript)
 		def.Id = def.Id or moduleScript.Name
 		table.insert(self.PickupDefs, def)
-	end
+	end	
 end
 
 function PickupManager:Start()
@@ -41,10 +43,7 @@ function PickupManager:Start()
 
 	local activeCount = 0
 
-	local function destroyPickup(pickup, touchConn)
-		if touchConn then
-			touchConn:Disconnect()
-		end
+	local function destroyPickup(pickup)
 		if self.ActivePickups[pickup] then
 			self.ActivePickups[pickup] = nil
 			activeCount -= 1
@@ -70,57 +69,77 @@ function PickupManager:Start()
 		pickup:SetAttribute("PickupId", def.Id)
 		pickup.Parent = self.PickupsFolder
 
-		local collider
 		if pickup:IsA("Model") then
-			collider = pickup.PrimaryPart or pickup:FindFirstChildWhichIsA("BasePart")
-			pickup.PrimaryPart = collider
 			pickup:PivotTo(CFrame.new(groundPos))
 		else
-			collider = pickup
 			pickup.CFrame = CFrame.new(groundPos)
 		end
 
-		self.ActivePickups[pickup] = true
+		self.ActivePickups[pickup] = {
+			Pos = groundPos,
+			Def = def,
+			Instance = pickup,
+			Collected = false,
+		}
 		activeCount += 1
 
-		local collected = false
-		local touchConn
-		touchConn = collider.Touched:Connect(function(hitPart)
-			if collected then
-				return
-			end
-
-			local _, plr = Functions.FindCharacter(hitPart)
-			if not plr then
-				return
-			end
-
-			collected = true
-			local ok, err = pcall(def.OnPickup, def, plr, self)
-			destroyPickup(pickup, touchConn)
-			if not ok then
-				warn(err)
-			end
-		end)
-
 		task.delay(self.Config.PickupLifetime, function()
-			destroyPickup(pickup, touchConn)
+			if self.ActivePickups[pickup] then
+				destroyPickup(pickup)
+			end
 		end)
 	end
 
+	-- Detection loop
 	task.spawn(function()
 		while true do
-			for pickup in pairs(self.ActivePickups) do
-				if not pickup.Parent then
-					self.ActivePickups[pickup] = nil
-					activeCount -= 1
+			local startTime = os.clock()
+			local players = Players:GetPlayers()
+			local characterData = {}
+
+			for _, plr in players do
+				local char = plr.Character
+				local root = char and char:FindFirstChild("HumanoidRootPart")
+				if root then
+					table.insert(characterData, { Plr = plr, Pos = root.Position })
 				end
 			end
 
+			local detectionRangeSq = self.Config.DetectionRange ^ 2
+
+			for pickup, data in self.ActivePickups do
+				if data.Collected or not pickup.Parent then
+					destroyPickup(pickup)
+					continue
+				end
+
+				for _, char in characterData do
+					local diff = char.Pos - data.Pos
+					local distSq = diff.X * diff.X + diff.Y * diff.Y + diff.Z * diff.Z
+					if distSq <= detectionRangeSq then
+						-- Prevent stacking if plr alrd has this effect
+						if data.Def.Id and self.StatusEffectManager:HasEffect(char.Plr, data.Def.Id) then
+							continue
+						end
+
+						data.Collected = true
+						local ok, err = pcall(data.Def.OnPickup, data.Def, char.Plr, self)
+						destroyPickup(pickup)
+						if not ok then warn(err) end
+						break
+					end
+				end
+			end
+			task.wait(self.Config.DetectionFrequency)
+		end
+	end)
+
+	-- Spawning loop
+	task.spawn(function()
+		while true do
 			if activeCount < self.Config.MaxActive then
 				spawnPickup()
 			end
-
 			task.wait(self.Config.SpawnInterval)
 		end
 	end)

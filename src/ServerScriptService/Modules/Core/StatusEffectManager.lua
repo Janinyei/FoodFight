@@ -83,6 +83,7 @@ end
 
 function StatusEffectManager:HasEffect(plr: Player, effectName: string)
     local effectTable = self.EffectedPlayers[plr]
+    if not effectTable then return false end
     
 	if table.find(effectTable, effectName) ~= nil then
 		return true
