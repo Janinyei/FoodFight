@@ -28,7 +28,6 @@ local LocalPlayer = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
 local Mouse = LocalPlayer:GetMouse()
 
-
 --PlayerModule variables--
 local PlayerModule = LocalPlayer:WaitForChild("PlayerScripts"):WaitForChild("PlayerModule")
 local CameraModule = require(PlayerModule:WaitForChild("CameraModule"))
@@ -100,15 +99,15 @@ function CameraController:Init(Core)
 	self.CAMERA_TRANSITION_OUT_SPEED = 10
 	self.MOUSE_LOCK_ICON = "rbxassetid://103003009346193"
 
-	self.CAMERA_AIM_OFFSET = Vector3.new(2,0,-2)
-	
+	self.CAMERA_AIM_OFFSET = Vector3.new(2, 0, -2)
+
 	-- Recoil Settings
 	self.RECOIL_DEFAULTS = {
 		recoilAmount = 2,
 		sideAmount = 1,
 		recoilSpeed = 0.05,
 		recoverSpeed = 0.5,
-		randomness = 0.2
+		randomness = 0.2,
 	}
 	self.ActiveRecoils = {}
 	self.RecoilOffset = Vector2.zero -- Smoothed accumulated recoil
@@ -118,7 +117,7 @@ function CameraController:Init(Core)
 	--springs--
 	self.OffsetSpring = Spring.new(Vector3.zero)
 	self.OffsetSpring.Damper = 0.7
-	
+
 	self.CameraLerpSpring = Spring.new(Vector3.zero)
 
 	--signals--
@@ -128,7 +127,6 @@ function CameraController:Init(Core)
 
 	-- camera shaker --
 	self.Shaker = CameraShaker.new(Enum.RenderPriority.Camera.Value, function() end)
-
 end
 
 function CameraController:Start()
@@ -171,60 +169,63 @@ function CameraController:Start()
 
 	local CameraLerpSpring = self.CameraLerpSpring
 	--test.Damper = 0.65
-	CameraLerpSpring.Speed = 100
+	CameraLerpSpring.Speed = 50
 
 	--constant camera spring update
-	self.ShiftLockJanitor:Add(RunService.RenderStepped:Connect(function(dt) --probably don't need a janitor since this isn't being cleaned up but you never know
+	self.ShiftLockJanitor:Add(
+		RunService.RenderStepped:Connect(
+			function(dt) --probably don't need a janitor since this isn't being cleaned up but you never know
+				CameraLerpSpring.Target = Camera.CFrame.Position
 
-		CameraLerpSpring.Target = Camera.CFrame.Position
-	
-	
-		if  self.Aiming then --allows for stable aiming
-			Camera.CFrame = Camera.CFrame * CFrame.new(self.OffsetSpring.Position)
-		else
-			Camera.CFrame = ((Camera.CFrame - Camera.CFrame.Position) + CameraLerpSpring.Position) * CFrame.new(self.OffsetSpring.Position)		
-		end
-
-		-- 1. Clean up/Undo previous frame's offsets to prevent accumulation
-		Camera.CFrame = Camera.CFrame * self.LastRecoilCF:Inverse() * self.LastShakeCF:Inverse()
-
-		-- 2. Update Recoil Math
-		local accumulatedTarget = Vector2.zero
-		for i = #self.ActiveRecoils, 1, -1 do
-			local recoil = self.ActiveRecoils[i]
-			recoil.elapsedTime = recoil.elapsedTime + dt
-			
-			local weight = 0
-			if recoil.isRising then
-				local progress = math.min(recoil.elapsedTime / recoil.config.recoilSpeed, 1)
-				weight = 1 - (1 - progress)^2 -- Quadratic ease-out for the "kick"
-				if progress >= 1 then
-					recoil.isRising = false
-					recoil.elapsedTime = 0
+				if self.Aiming then --allows for stable aiming
+					Camera.CFrame = Camera.CFrame * CFrame.new(self.OffsetSpring.Position)
+				else
+					Camera.CFrame = ((Camera.CFrame - Camera.CFrame.Position) + CameraLerpSpring.Position)
+						* CFrame.new(self.OffsetSpring.Position)
 				end
-			else
-				local progress = math.max(1 - recoil.elapsedTime / recoil.config.recoverSpeed, 0)
-				weight = progress^3 -- Cubic ease-in for the "recovery"
-				if progress <= 0 then
-					table.remove(self.ActiveRecoils, i)
+
+				-- 1. Clean up/Undo previous frame's offsets to prevent accumulation
+				Camera.CFrame = Camera.CFrame * self.LastRecoilCF:Inverse() * self.LastShakeCF:Inverse()
+
+				-- 2. Update Recoil Math
+				local accumulatedTarget = Vector2.zero
+				for i = #self.ActiveRecoils, 1, -1 do
+					local recoil = self.ActiveRecoils[i]
+					recoil.elapsedTime = recoil.elapsedTime + dt
+
+					local weight = 0
+					if recoil.isRising then
+						local progress = math.min(recoil.elapsedTime / recoil.config.recoilSpeed, 1)
+						weight = 1 - (1 - progress) ^ 2 -- Quadratic ease-out for the "kick"
+						if progress >= 1 then
+							recoil.isRising = false
+							recoil.elapsedTime = 0
+						end
+					else
+						local progress = math.max(1 - recoil.elapsedTime / recoil.config.recoverSpeed, 0)
+						weight = progress ^ 3 -- Cubic ease-in for the "recovery"
+						if progress <= 0 then
+							table.remove(self.ActiveRecoils, i)
+						end
+					end
+
+					accumulatedTarget = accumulatedTarget + recoil.target * weight
 				end
+
+				-- 3. Smoothly transition the recoil offset to return to center
+				self.RecoilOffset = self.RecoilOffset + (accumulatedTarget - self.RecoilOffset) * dt * 10
+
+				-- 4. Re-apply fresh offsets
+				self.LastRecoilCF = CFrame.Angles(math.rad(self.RecoilOffset.Y), math.rad(self.RecoilOffset.X), 0)
+				self.LastShakeCF = self.Shaker:Update(dt)
+
+				Camera.CFrame = Camera.CFrame * self.LastRecoilCF * self.LastShakeCF
+
+				-- Update FOV
+				Camera.FieldOfView = self.FOVSpring.Position
 			end
-			
-			accumulatedTarget = accumulatedTarget + recoil.target * weight
-		end
-
-		-- 3. Smoothly transition the recoil offset to return to center
-		self.RecoilOffset = self.RecoilOffset + (accumulatedTarget - self.RecoilOffset) * dt * 10
-		
-		-- 4. Re-apply fresh offsets
-		self.LastRecoilCF = CFrame.Angles(math.rad(self.RecoilOffset.Y), math.rad(self.RecoilOffset.X), 0)
-		self.LastShakeCF = self.Shaker:Update(dt)
-
-		Camera.CFrame = Camera.CFrame * self.LastRecoilCF * self.LastShakeCF
-
-		-- Update FOV
-		Camera.FieldOfView = self.FOVSpring.Position
-	end))
+		)
+	)
 end
 
 function CameraController:ToggleShiftLock(Enable: boolean)
@@ -234,33 +235,48 @@ function CameraController:ToggleShiftLock(Enable: boolean)
 		self.ShiftLockEnabled = not self.ShiftLockEnabled
 	end
 
+	if self.CharacterController and self.CharacterController.ParkourConfig then
+		self.CharacterController.ParkourConfig.rotateHRPWithCamera = self.ShiftLockEnabled
+	end
+
 	self:_updateMouseBehavior()
 	self:_adjustLockOffset()
 end
 
-function CameraController:ToggleAimZoom(Enable : boolean)
+--sets cam subject to specific player's
+function CameraController:Spectate(Target: Player | Character?)
+	local CameraSubject
 
+	if Target:IsA("Player") then
+		CameraSubject = Target.Character.HumanoidRootPart
+	elseif Target:IsA("Model") then
+		CameraSubject = Target.HumanoidRootPart
+	end
+
+	if CameraSubject then
+	Camera.CameraSubject = CameraSubject
+	end
+end
+
+function CameraController:ToggleAimZoom(Enable: boolean)
 	if Enable then
 		self.OffsetSpring.Target = self.CAMERA_AIM_OFFSET
 		self.OffsetSpring.Speed = 20
 		self.OffsetSpring.Damper = 1
 
-	--	self.CameraLerpSpring.Speed = 100
-	
+		--	self.CameraLerpSpring.Speed = 100
+
 		self.Aiming = true
 	else
 		self:_adjustLockOffset()
 		self.Aiming = false
 	end
-
-	
-
 end
 
-
+--is this function even being used lol?
 function CameraController:SetSpectate(IsSpectating: boolean, Position: Vector3?)
 	if IsSpectating and Position then
-		 Camera.CameraType = Enum.CameraType.Scriptable
+		Camera.CameraType = Enum.CameraType.Scriptable
 		local cameraPos = Position + Vector3.new(100, 80, 100)
 		Camera.CFrame = CFrame.lookAt(cameraPos, Position)
 	else
@@ -285,19 +301,21 @@ end
 function CameraController:ApplyRecoil(multiplier: number?, config: table?)
 	multiplier = multiplier or 1
 	local cfg = config or self.RECOIL_DEFAULTS
-	
+
 	-- Clean targeted recoil math
 	local rand = cfg.randomness
-	local randomMult = function() return 1 + (math.random() * 2 * rand - rand) end
-	
+	local randomMult = function()
+		return 1 + (math.random() * 2 * rand - rand)
+	end
+
 	local targetX = cfg.sideAmount * (math.random() - 0.5) * 2 * randomMult() * multiplier
 	local targetY = cfg.recoilAmount * randomMult() * multiplier
-	
+
 	table.insert(self.ActiveRecoils, {
 		elapsedTime = 0,
 		target = Vector2.new(targetX, targetY),
 		isRising = true,
-		config = cfg
+		config = cfg,
 	})
 end
 
@@ -319,7 +337,17 @@ function CameraController:HitPause(duration: number)
 	end
 end
 
-function CameraController:Shake(presetName: string | table | number, magnitude: number?, roughness: number?, fadeInTime: number?, fadeOutTime: number?, posInfluence: Vector3?, rotInfluence: Vector3?)
+----------------------------Camera Shaking Effects-------------------
+
+function CameraController:Shake(
+	presetName: string | table | number,
+	magnitude: number?,
+	roughness: number?,
+	fadeInTime: number?,
+	fadeOutTime: number?,
+	posInfluence: Vector3?,
+	rotInfluence: Vector3?
+)
 	if type(presetName) == "string" then
 		local preset = CameraShaker.Presets[presetName]
 		if preset then
@@ -332,12 +360,12 @@ function CameraController:Shake(presetName: string | table | number, magnitude: 
 		local actualRough = type(presetName) == "number" and magnitude or roughness
 		local actualFadeIn = type(presetName) == "number" and roughness or fadeInTime
 		local actualFadeOut = type(presetName) == "number" and fadeInTime or fadeOutTime
-		
+
 		if actualMag then
 			local instance = self.Shaker:ShakeOnce(
-				actualMag, 
-				actualRough or 1, 
-				tonumber(actualFadeIn) or 0.1, 
+				actualMag,
+				actualRough or 1,
+				tonumber(actualFadeIn) or 0.1,
 				tonumber(actualFadeOut) or 0.5
 			)
 			instance.PositionInfluence = posInfluence or Vector3.new(0, 0, 0)
@@ -357,7 +385,6 @@ end
 
 --more shift lock stuff
 function CameraController:_adjustLockOffset()
-	
 	if self.ShiftLockEnabled == true then
 		self.OffsetSpring.Speed = self.CAMERA_TRANSITION_IN_SPEED
 		self.OffsetSpring.Target = self.MOUSE_LOCK_OFFSET

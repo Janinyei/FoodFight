@@ -20,7 +20,8 @@ function SharedRemotes:Init()
 		"AudioEvent",
 		"VoteEvent",
 		"LeaderboardEvent",
-		"KillEffectsEvent"
+		"DeathEvent",
+		"SpectateEvent"
 	}
 
 	self.Events = nil

@@ -235,11 +235,12 @@ function AnimationController:_handleMovementAnims()
 
 	--Animation Loop(primarily for movement)
 	self.AnimationRuntimeEvent = RunService.PreRender:Connect(function(dt)
-		if not (self.Character and self.Humanoid) then
+		if not (self.Character and self.Humanoid and self.Character.Parent) then
 			return
 		end
 		
 
+	
 		--if ParkourStates:IsState("Vaulting") or ParkourStates:IsState("Sliding") then return end
 
 		if ParkourStates:IsState("Sliding") then

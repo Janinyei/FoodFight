@@ -20,20 +20,20 @@ function InputController:Init(Core)
 		},
 
 		["Shoot"] = {
-			["Inputs"] = {Enum.UserInputType.MouseButton1, Enum.KeyCode.ButtonR2}
+			["Inputs"] = { Enum.UserInputType.MouseButton1, Enum.KeyCode.ButtonR2 },
 		},
 		["UpAction"] = {
-					["Inputs"] = {Enum.KeyCode.Space, Enum.KeyCode.ButtonA}
-				},
+			["Inputs"] = { Enum.KeyCode.Space, Enum.KeyCode.ButtonA },
+		},
 
-			["Dash"] = {
-				["Inputs"] = {Enum.KeyCode.Q}
-			},
+		["Dash"] = {
+			["Inputs"] = { Enum.KeyCode.Q },
+		},
 
-			["DownAction"] = {
-							["Inputs"] = {Enum.KeyCode.LeftShift}
-						}
-	
+		["DownAction"] = {
+			["Inputs"] = { Enum.KeyCode.LeftShift },
+		},
+
 		-- Add more here
 	}
 
@@ -41,16 +41,13 @@ function InputController:Init(Core)
 	self.Actions = {}
 end
 
-
-
-function  InputController:Start()
+function InputController:Start()
 	self:LoadBinds()
 end
 
 function InputController:BindAction(ActionName, Callback)
 	self.Actions[ActionName] = Callback
 end
-
 
 --registers and loads binds with
 function InputController:LoadBinds()
@@ -77,7 +74,7 @@ function InputController:SetActionCallback(ActionName: string, callback)
 end
 
 --changes the bind for an action, this will be useful for settings later on
-function InputController:SetBind(ActionName, NewInputs: {}, MobileButton:( ImageButton?)| TextButton?)
+function InputController:SetBind(ActionName, NewInputs: {}, MobileButton: ImageButton? | TextButton?)
 	CAS:UnbindAction(ActionName) --unbind previous action
 	self.Binds[ActionName].Inputs = NewInputs
 end
@@ -86,10 +83,8 @@ function InputController:AttachMobileButton(ActionName, MobileButton)
 	--adds mobile button to action
 end
 
-
 --will eventually have to implement mobile functionality
-function InputController:IsActionKeyDown(ActionName :  string) --checks if a key is being held down for specific action
-
+function InputController:IsActionKeyDown(ActionName: string) --checks if a key is being held down for specific action
 	local isKeydown = false
 	for _, keycode in self.Binds[ActionName].Inputs do
 		if UIS:IsKeyDown(keycode) then

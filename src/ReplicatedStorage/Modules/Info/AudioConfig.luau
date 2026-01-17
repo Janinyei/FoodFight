@@ -71,6 +71,14 @@ local AudioConfig = {
 		ShouldReplicate = true,
 	},
 
+	--kill effect sounds--
+	["blackhole_warp"] = {
+		Id = "18870782376",
+		SoundGroup = SoundEffectsGroup
+	},
+
+
+	--this below is an example of what I could potentially use instead of what I have right now
 	["InGame"] = {
 		AudioList = {
 			["vault"] = {

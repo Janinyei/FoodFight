@@ -1,9 +1,11 @@
 local Blackhole = {}
 
-function Blackhole:PlayKillEffect(data)
-	local TargetPlr = data.TargetPlayer
-
-	local TargetCharacter = TargetPlr.Character
+function Blackhole:PlayKillEffect(data, Core)
+	local TargetCharacter = data.TargetCharacter
+	local AudioController = Core:Get("AudioController")
+	
+    local TweenService = game:GetService("TweenService")
+    local UtilFunctions = require(game.ReplicatedStorage.Modules.Utils.Functions)
 
 	local Duration = 4
 
@@ -29,6 +31,10 @@ function Blackhole:PlayKillEffect(data)
 
 	--  DragAP.RigidityEnabled = true
 
+	AudioController:PlayAudio({
+		Name = "blackhole_warp",
+		Source = TargetCharacter.HumanoidRootPart,
+	})
 	DragAP.Enabled = true
 
 	local BlackholeVFX = game.ReplicatedStorage.Assets.KillEffects.Blackhole.Blackhole:Clone()
@@ -37,12 +43,30 @@ function Blackhole:PlayKillEffect(data)
 
 	BlackholeVFX.Position = TargetPos
 
-	task.delay(Duration, function()
-		DragAP:Destroy()
 
-        
+	task.delay(Duration, function()
+		
 		BlackholeVFX:Destroy()
 	end)
+
+    task.spawn(function()
+        local StartTime = os.clock()
+        local Duration = 4 -- Match your blackhole duration
+        
+        while TargetCharacter and TargetCharacter.Parent do
+            local Elapsed = os.clock() - StartTime
+            local Alpha = math.clamp(Elapsed / 2, 0, 1) -- Moves from 0 to 1
+            
+            -- Use an Easing function for a "vacuum" feel (starts slow, ends fast)
+            local CurvedAlpha = Alpha
+            
+            local currentScale = UtilFunctions.Lerp(1, 0.05, CurvedAlpha)
+            TargetCharacter:ScaleTo(currentScale)
+            
+            if Alpha >= 1 then break end
+            task.wait() -- Runs every frame
+        end
+    end)
 end
 
 return Blackhole
