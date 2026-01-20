@@ -36,11 +36,10 @@ function TeamManager:CreateTeam(TeamName : string)
         return
     end
 
-
     self.Teams[TeamName] = {
         Players = {},
         Config = TeamConfig[TeamName],
-        Points = {},
+        Points = 0,
     }
 end
 
@@ -58,6 +57,16 @@ end
 --removes all teams
 function TeamManager:CleanupTeams()
     self.Teams = {}
+end
+
+function TeamManager:GetTeam(TargetPlayer:Player)
+    for TeamName, Team in pairs(self.Teams) do
+        if Team.Players[TargetPlayer] then
+            return TeamName
+        end
+    end
+
+    return nil
 end
 
 --sets a player's team

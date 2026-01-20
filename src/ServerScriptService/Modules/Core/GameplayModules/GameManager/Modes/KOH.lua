@@ -17,7 +17,6 @@ end
 function KOH:StartMode()
 	print("Starting KOH Mode")
 	
-	-- Setup Teams
 	self.TeamManager:CleanupTeams()
 	self.TeamManager:CreateTeamsFromMode("KOH")
 	self.TeamManager:AutoAssignBalancedTeams()
@@ -26,31 +25,21 @@ function KOH:StartMode()
 	self.Zones = {}
 	local map = workspace:FindFirstChild("Map")
 	if map then
-		local zonesFolder = map:FindFirstChild("Zones")
+		local zonesFolder = map:FindFirstChild("GamePlay"):FindFirstChild("HillZones")
 		if zonesFolder then
 			for _, zone in pairs(zonesFolder:GetChildren()) do
 				if zone:IsA("BasePart") then
 					table.insert(self.Zones, zone)
-					zone.Transparency = 0.5
-					zone.CanCollide = false
-					zone.Anchored = true
 				end
 			end
 		end
-	end
-	
-	if #self.Zones == 0 then
-		warn("KOH Mode: No zones found in Map/Zones folder!")
-	else
-		print("KOH Mode: Found " .. #self.Zones .. " zones.")
 	end
 end
 
 function KOH:OnTick(TimeRemaining)
 	local params = OverlapParams.new()
+	params.FilterDescendantsInstances = {self.Zones} 
 	params.FilterType = Enum.RaycastFilterType.Include
-	params.FilterDescendantsInstances = {} 
-	params.FilterType = Enum.RaycastFilterType.Exclude
 	
 	for _, zone in pairs(self.Zones) do
 		local parts = workspace:GetPartBoundsInBox(zone.CFrame, zone.Size, params)
@@ -64,7 +53,6 @@ function KOH:OnTick(TimeRemaining)
 				if player and not foundPlayers[player] then
 					foundPlayers[player] = true
 					
-					-- Find Player Team
 					local pTeam = nil
 					for name, teamData in pairs(self.TeamManager.Teams) do
 						if table.find(teamData.Players, player) then
@@ -80,7 +68,6 @@ function KOH:OnTick(TimeRemaining)
 			end
 		end
 		
-		-- Award Points
 		for teamName, count in pairs(teamCounts) do
 			if count > 0 then
 				self.MatchStatsManager:IncrementTeam(teamName, "Points", 3 * count)
@@ -104,7 +91,7 @@ function KOH:OnTick(TimeRemaining)
 				zone.Color = teamData.Color
 			end
 		else
-			zone.Color = Color3.fromRGB(150, 150, 150) -- Neural/Contested
+			zone.Color = Color3.fromRGB(150, 150, 150)
 		end
 	end
 end
