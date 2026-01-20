@@ -21,9 +21,15 @@ function MatchStatsManager:Init(Core)
 	self.PlayerData = {}
 	self.LeaderboardEvent = Core:Get("SharedRemotes"):GetEvent("LeaderboardEvent")
 	self.GameManager = Core:Get("GameManager")
+<<<<<<< HEAD
 	self.StatsChanged = Signal.new()
 	self.TeamScores = {}
 	self.TeamStatsChanged = Signal.new()
+=======
+	 self.StatsChanged = Signal.new()
+	 self.TeamScores = {}
+	 self.TeamStatsChanged = Signal.new()
+>>>>>>> ce0094f2300b056a1c675f33ea0784e54d2d28e7
 end
 
 function MatchStatsManager:Start()
@@ -63,6 +69,25 @@ function MatchStatsManager:Increment(targetPlr: Player, statName: string, amount
 		self.PlayerData[targetPlr][statName] += Amt
         self.StatsChanged:Fire(targetPlr, self.PlayerData[targetPlr])
 	end
+end
+
+function MatchStatsManager:IncrementTeam(TeamName: string, statName: string, amount: number?)
+	if not self.TeamScores[TeamName] then
+		self.TeamScores[TeamName] = {}
+	end
+	
+	if not self.TeamScores[TeamName][statName] then
+		self.TeamScores[TeamName][statName] = 0
+	end
+	
+	local Amt = amount or 1
+	self.TeamScores[TeamName][statName] += Amt
+	self.TeamStatsChanged:Fire(TeamName, self.TeamScores[TeamName])
+end
+
+function MatchStatsManager:ResetTeamScores()
+	self.TeamScores = {}
+	self.TeamStatsChanged:Fire("All", {})
 end
 
 function MatchStatsManager:LoadAllPlayers()

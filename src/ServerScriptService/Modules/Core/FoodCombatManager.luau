@@ -7,6 +7,8 @@ local FoodCombatManager = {}
 local ServerScriptService = game:GetService("ServerScriptService")
 local Players = game:GetService("Players")
 local CollectionService = game:GetService("CollectionService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Signal = require(ReplicatedStorage.Modules.Utils.Signal)
 
 function FoodCombatManager:Init(Core)
 	self.ProjectileManager = Core:Get("ProjectileManager")
@@ -15,6 +17,7 @@ function FoodCombatManager:Init(Core)
 
 	self.FoodServerModuleFolder = ServerScriptService.Modules.Core.FoodServerModules
 	self.EnergyManager = Core:Get("EnergyManager")
+	self.Eliminated = Signal.new()
 	self.ComboManager = Core:Get("ComboManager")
 	self.DataManager = Core:Get("DataManager")
 	self.MatchStatsManager = Core:Get("MatchStatsManager")
@@ -302,6 +305,7 @@ function FoodCombatManager:ProcessElimination(victim, corpse): {}
 
 	--fire to clients to handle kill cam and kill effects
 	self.DeathEvent:Fires(true, EliminationData)
+	self.Eliminated:Fire(EliminationData)
 
 	-- 5. Cleanup
 	self.DamageHistory[victim] = nil
