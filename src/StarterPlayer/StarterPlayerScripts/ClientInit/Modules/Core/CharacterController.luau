@@ -622,6 +622,18 @@ end
 function CharacterController:_multiJump()
 	if self.ParkourConfig.currentJumps < self.ParkourConfig.maxJumps and self.ParkourConfig.currentJumps >= 1 then
 		self.MultiJump:Fire()
+		local fx = ReplicatedStorage.Assets.Effects.Jump:Clone()
+		fx.Parent = workspace.VisualEffectsCache
+		local pos = self.HRP.Position - Vector3.yAxis * 2
+		local _, y, _ = self.HRP.CFrame:ToOrientation()
+		local cf = CFrame.new(pos) * CFrame.Angles(0, y, 0)
+		if fx:IsA("Model") then
+			fx:PivotTo(cf)
+		else
+			(fx :: BasePart).CFrame = cf
+		end
+		UtilFunctions.Emit(fx)
+		Debris:AddItem(fx, 2)
 		self.ParkourConfig.currentJumps += 1
 		local currentVelo = self.HRP.AssemblyLinearVelocity
 		self.HRP.AssemblyLinearVelocity =
