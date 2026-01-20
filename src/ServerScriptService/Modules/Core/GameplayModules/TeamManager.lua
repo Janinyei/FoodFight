@@ -39,7 +39,8 @@ function TeamManager:CreateTeam(TeamName : string)
 
     self.Teams[TeamName] = {
         Players = {},
-        Config = TeamConfig[TeamName]
+        Config = TeamConfig[TeamName],
+        Points = {},
     }
 end
 

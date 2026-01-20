@@ -21,7 +21,9 @@ function MatchStatsManager:Init(Core)
 	self.PlayerData = {}
 	self.LeaderboardEvent = Core:Get("SharedRemotes"):GetEvent("LeaderboardEvent")
 	self.GameManager = Core:Get("GameManager")
-	 self.StatsChanged = Signal.new()
+	self.StatsChanged = Signal.new()
+	self.TeamScores = {}
+	self.TeamStatsChanged = Signal.new()
 end
 
 function MatchStatsManager:Start()
