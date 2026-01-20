@@ -37,6 +37,11 @@ TweenUtils.GrowOnHover =  function(UIElement : GuiObject, UIScale : UIScale, Dif
     end)
 end
 
+TweenUtils.Grow = function(UIElement : GuiObject, TwnInfo : TweenInfo)
+    
+end
+
+
 
 --Rotates on hover
 TweenUtils.RotateOnHover = function(UIElement : GuiObject, GoalRot, TwnInfo)

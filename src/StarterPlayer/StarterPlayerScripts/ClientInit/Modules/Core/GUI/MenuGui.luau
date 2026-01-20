@@ -8,8 +8,7 @@ local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local PlayerGui = LocalPlayer.PlayerGui
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-
-
+local TweenService = game:GetService("TweenService")
 
 --imports--
 local PlayerScripts = LocalPlayer.PlayerScripts
@@ -18,31 +17,143 @@ local ItemIndex = require(ReplicatedStorage.Modules.Info.ItemIndex)
 local RarityIndex = require(ReplicatedStorage.Modules.Info.RarityIndex)
 local TweenUtils = require(ClientUtils.TweenUtils)
 
-
 function MenuGui:Init(Core)
 	self.MenuScreen = PlayerGui.Menu
 	self.ClientDataController = Core:Get("ClientDataController")
-    self.ScreenGuiController = Core:Get("ScreenGuiController")
-    self.MouseController = Core:Get("MouseController")
-    self.CharacterEvent = Core:Get("SharedRemotes"):GetEvent("CharacterEvent")
+	self.ScreenGuiController = Core:Get("ScreenGuiController")
+	self.MouseController = Core:Get("MouseController")
+	self.CharacterEvent = Core:Get("SharedRemotes"):GetEvent("CharacterEvent")
 	self.InventoryEvent = Core:Get("SharedRemotes"):GetEvent("InventoryEvent")
+	self.GameController = Core:Get("GameController")
 
 	--loads menu components--
---	self:InitProgressionGui()
---	self:InitCurrencyGui()
---	self:InitBottomFrame()
---	self:InitInventoryGui()
+
+	self:InitMenuButtons()
+	self:InitPlayButton()
+	self:InitProgressionGui()
+	--	self:InitCurrencyGui()
+	--	self:InitBottomFrame()
+	--	self:InitInventoryGui()
 end
 
 function MenuGui:Start() end
 
+--Menu Buttons--
+function MenuGui:InitMenuButtons()
+	local MenuButtons = self.MenuScreen.MenuButtons
+	local MenuFrameDefaultColor = Color3.fromRGB(30, 30, 30)
+	local MenuPrimaryColors = {
+		["Inventory"] = Color3.fromRGB(96, 125, 255),
+		["Shop"] = Color3.fromRGB(117, 71, 255),
+		["Missions"] = Color3.fromRGB(180, 255, 137),
+		["Settings"] = Color3.fromRGB(172, 172, 172),
+		["Crates"] = Color3.fromRGB(255, 156, 35),
+		["Updates"] = Color3.fromRGB(255, 87, 87),
+	}
+
+	--replace dark color with color theme on hover
+
+	for _, buttonFrame: GuiObject in MenuButtons:GetChildren() do
+		if not buttonFrame:IsA("Frame") then
+			continue
+		end
+
+		local PrimaryColor = MenuPrimaryColors[buttonFrame.Name]
+
+		--set initial colors--
+
+		buttonFrame.ImageLabel.ImageColor3 = PrimaryColor
+		buttonFrame.BackgroundColor3 = PrimaryColor
+
+		buttonFrame.MouseEnter:Connect(function()
+
+			if PrimaryColor then
+				TweenService:Create(
+					buttonFrame,
+					TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut),
+					{ BackgroundColor3 = PrimaryColor }
+				):Play()
+				TweenService:Create(
+					buttonFrame.ImageLabel,
+					TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut),
+					{ ImageColor3 = Color3.fromRGB(255, 255, 255) }
+				):Play()
+
+				--insert audio--
+			end
+		end)
+
+		buttonFrame.MouseLeave:Connect(function()
+
+			--	buttonFrame.BackgroundColor3 = MenuFrameDefaultColor
+
+			TweenService:Create(
+				buttonFrame,
+				TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut),
+				{ BackgroundColor3 = MenuFrameDefaultColor }
+			):Play()
+			TweenService:Create(
+				buttonFrame.ImageLabel,
+				TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut),
+				{ ImageColor3 = PrimaryColor }
+			):Play()
+		end)
+	end
+end
+
+function MenuGui:InitPlayButton()
+	--load as flat or whatever
+	--the menu timer will be modified in the timergui script isntead of here
+	local TopArea = self.MenuScreen.TopArea
+	local Top = TopArea.Top
+	local PlayButton = Top.PlayButton
+
+	local InitHeight = Top.Size.Y.Scale
+
+	Top.Size = UDim2.fromScale(Top.Size.X.Scale, 0) --flatten
+
+	--set up event to change
+	self.GameController.GameDataChanged:Connect(function(data)
+		if data.InGame == true then
+			TweenService:Create(
+				Top,
+				TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut),
+				{ Size = UDim2.fromScale(Top.Size.X.Scale, InitHeight) }
+			):Play()
+		else
+			TweenService:Create(
+				Top,
+				TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut),
+				{ Size = UDim2.fromScale(Top.Size.X.Scale, 0) }
+			):Play()
+		end
+	end)
+
+	TweenUtils.GrowOnHover(
+		PlayButton,
+		PlayButton.UIScale,
+		0.1,
+		TweenInfo.new(0.35, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut)
+	)
+
+	TweenUtils.ButtonClickTween(PlayButton, PlayButton.UIScale, 0.1, function()
+		self.CharacterEvent:Invoke(8, "Spawn")
+	end)
+end
+
+function MenuGui:OnClose()
+	
+end
+
+
 --Progression Gui--
 function MenuGui:InitProgressionGui()
-	self.ProgressionGui = self.MenuScreen.Container.ProgressionContainer
+	self.ProgressionGui = self.MenuScreen.Progression
 
 	local ProgressionGui = self.ProgressionGui
-	local ProgressBarContainer = ProgressionGui.Progression.ProgressBarContainer
-	local ProgressBar = ProgressBarContainer.ProgressBar
+
+	local ProgBarContainer = ProgressionGui.Container
+	local ProgBar = Container.ProgBar
 	local PlayerName = self.ProgressionGui.PlayerName
 
 	self.ClientDataController.ProgressionChanged:Connect(function(ProgressionData)
@@ -50,46 +161,55 @@ function MenuGui:InitProgressionGui()
 		--level text
 		ProgressionGui.Progression.LevelNum.Text = tostring(ProgressionData.Level)
 
-		--rank text
-		ProgressionGui.Progression.Rank.Text = ProgressionData.Rank
 
 		--exp bar text and sizing
-		ProgressBarContainer.ExpAmount.Text = tostring(ProgressionData.Exp) .. " / " .. tostring(MaxExp)
+		ProgBarContainer.ExpAmount.Text = tostring(ProgressionData.Exp) .. " | " .. tostring(MaxExp)
 
 		local ProgressPercent = ProgressionData.Exp / MaxExp
 		-- ProgressBar.Size = UDim2.fromScale(ProgressPercent, 1)
-		TweenUtils.TweenBar(ProgressBar, ProgressPercent, 0.5)
+		TweenUtils.TweenBar(ProgBarContainer, ProgressPercent, 0.5)
+
+		--update stats
+
+		local Stats = ProgressionData.Stats
+
+		for statName, statValue in Stats do 
+			
+		end
 	end)
 end
 
+
+
+--old code below--
+
 --Currency Gui--
 function MenuGui:InitCurrencyGui()
+	self.CurrencyGui = self.MenuScreen.Container.CurrencyFrame
+	local CurrencyGui = self.CurrencyGui
 
-    self.CurrencyGui = self.MenuScreen.Container.CurrencyFrame
-    local CurrencyGui = self.CurrencyGui
-    
 	self.ClientDataController.CurrencyChanged:Connect(function(CurrencyData)
 		CurrencyGui.Coins.Amount.Text = tostring(CurrencyData.Coins)
 		CurrencyGui.Gems.Amount.Text = tostring(CurrencyData.Gems)
 	end)
 
-    for _, UIFrame in self.CurrencyGui:GetChildren() do
-        if UIFrame:FindFirstChild("BuyMore") then
-            local BuyMoreFrame = UIFrame.BuyMore
-            TweenUtils.GrowOnHover(
-                BuyMoreFrame,
-                BuyMoreFrame.UIScale,
-                0.1,
-                TweenInfo.new(0.35, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-            )
+	for _, UIFrame in self.CurrencyGui:GetChildren() do
+		if UIFrame:FindFirstChild("BuyMore") then
+			local BuyMoreFrame = UIFrame.BuyMore
+			TweenUtils.GrowOnHover(
+				BuyMoreFrame,
+				BuyMoreFrame.UIScale,
+				0.1,
+				TweenInfo.new(0.35, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+			)
 
-            TweenUtils.ButtonClickTween(BuyMoreFrame.Button, BuyMoreFrame.UIScale, 0.05, function()
-                print("Buy more " .. UIFrame.Name .. " clicked")
-                --open store screen
-                self.ScreenGuiController:SetScreen("Store")
-            end)
-        end
-    end
+			TweenUtils.ButtonClickTween(BuyMoreFrame.Button, BuyMoreFrame.UIScale, 0.05, function()
+				print("Buy more " .. UIFrame.Name .. " clicked")
+				--open store screen
+				self.ScreenGuiController:SetScreen("Store")
+			end)
+		end
+	end
 end
 
 --Bottom Frame
@@ -109,12 +229,11 @@ function MenuGui:InitBottomFrame()
 			)
 
 			TweenUtils.ButtonClickTween(UIFrame.Button, UIFrame.UIScale, 0.05, function()
-			
 				--button functionality goes here--
 				if UIFrame == PlayButton then
-                    self.CharacterEvent:Invoke(8, "Spawn")
+					self.CharacterEvent:Invoke(8, "Spawn")
 				elseif UIFrame == StoreButton then
-                    self.ScreenGuiController:SetScreen("Store")
+					self.ScreenGuiController:SetScreen("Store")
 				elseif UIFrame == SettingsButton then
 					self.ScreenGuiController:SetScreen("Settings")
 				end
@@ -131,8 +250,6 @@ function MenuGui:InitInventoryGui()
 	local PageContainer = InventoryGui.PageContainer
 	local UIPageLayout = PageContainer.UIPageLayout
 
-
-
 	--navigation logic--
 
 	for _, Button in TabContainer:GetChildren() do
@@ -141,13 +258,13 @@ function MenuGui:InitInventoryGui()
 			Button.ImageButton.MouseButton1Click:Connect(function()
 				if TargetPage then
 					UIPageLayout:JumpTo(TargetPage)
-                    Button.UIStroke.Color = Color3.fromRGB(255,255,255)
+					Button.UIStroke.Color = Color3.fromRGB(255, 255, 255)
 
-                    --change other buttons back
-                    for _, OtherButton in TabContainer:GetChildren() do
-                        if OtherButton:IsA("Frame") and OtherButton ~= Button then
-                            OtherButton.UIStroke.Color = Color3.fromRGB(50,50,50)
-                        end
+					--change other buttons back
+					for _, OtherButton in TabContainer:GetChildren() do
+						if OtherButton:IsA("Frame") and OtherButton ~= Button then
+							OtherButton.UIStroke.Color = Color3.fromRGB(50, 50, 50)
+						end
 					end
 				end
 			end)
@@ -155,9 +272,9 @@ function MenuGui:InitInventoryGui()
 	end
 
 	--load items in inventory pages--
-	local InventoryItemTemplate = InventoryGui.PageContainer.Food.ItemFrame--item template for all of the inventory
+	local InventoryItemTemplate = InventoryGui.PageContainer.Food.ItemFrame --item template for all of the inventory
 	local ItemTooltipUI = PlayerGui.Tooltip --tooltip UI
-	
+
 	--use one tooltip UI for every item
 	for _, Category in ItemIndex do
 		for ItemName, ItemData in Category do
@@ -169,7 +286,7 @@ function MenuGui:InitInventoryGui()
 
 			--display item image
 			if ItemData.ImageId then
-			ItemFrame.MainContent.ItemImage.Image = ItemData.ImageId
+				ItemFrame.MainContent.ItemImage.Image = ItemData.ImageId
 			end
 			--glow frame--
 			ItemFrame.StrokeGlow.ImageColor3 = RarityIndex[ItemData.Rarity].Color
@@ -214,14 +331,10 @@ function MenuGui:InitInventoryGui()
 
 			ItemFrame.MouseMoved:Connect(function(x, y)
 				--move tooltip
-				ItemTooltipUI.Container.Position = UDim2.fromOffset(x,y)
+				ItemTooltipUI.Container.Position = UDim2.fromOffset(x, y)
 			end)
-
-
-			
 		end
 	end
 end
 
 return MenuGui
-

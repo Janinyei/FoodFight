@@ -46,8 +46,10 @@ function GameManager:Init(Core)
 	self.CurrentMode = nil
 	self.TimerEvent = Core:Get("SharedRemotes"):GetEvent("TimerEvent")
 	self.SpectateEvent = Core:Get("SharedRemotes"):GetEvent("SpectateEvent")
+	self.GameEvent = Core:Get("SharedRemotes"):GetEvent("GameEvent")
 	self.MatchStatsManager = Core:Get("MatchStatsManager")
 
+	
 	
 	--mode table--
 	self.ModesTable = {} --table of loaded modules
@@ -119,6 +121,9 @@ function GameManager:SetMode(ModeName: string)
 
 		if table.find(self.PlayableModes, self.CurrentMode.Name) ~= nil then
 			self.InGame = true
+			self.GameEvent:Fires(true,{
+				InGame = self.InGame
+			})
 		end
 	else
 		warn("Round: " .. ModeName .. " does not exist")

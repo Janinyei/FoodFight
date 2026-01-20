@@ -13,7 +13,7 @@ function SharedRemotes:Init()
 		"TimerEvent",
 		"ProgressionEvent",
 		"VFXEvent",
-		"GameStatusEvent",
+		"GameEvent",
 		"CombatEvent",
 		"CharacterEvent",
 		"StatusEffectEvent",
