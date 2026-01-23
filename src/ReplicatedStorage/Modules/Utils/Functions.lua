@@ -134,4 +134,27 @@ return {
     end
    end,
    
+
+   ToggleRagdoll = function(targetChar, enabled : boolean)
+    if enabled then
+       for _, v in pairs(targetChar:GetDescendants()) do
+            if v:IsA("Motor6D") then
+                v.Enabled = false
+            elseif v:IsA("BallSocketConstraint") then
+                v.Enabled = true
+            end
+        end
+    else 
+        for _, v in pairs(targetChar:GetDescendants()) do
+            if v:IsA("Motor6D") then
+                v.Enabled = true
+            elseif v:IsA("BallSocketConstraint") then
+                v.Enabled = false
+            end
+        end
+    end
+   end,
+
+
+   
 }

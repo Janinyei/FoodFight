@@ -11,6 +11,8 @@ local Janitor = require(ReplicatedStorage.Modules.Utils.Janitor)
 local SpeedLines = require(ReplicatedStorage.Modules.Effects.SpeedLines)
 local ScreenEffects = require(ReplicatedStorage.Modules.Effects.ScreenEffects)
 
+
+local UtilFunctions = require(ReplicatedStorage.Modules.Utils.Functions)
 function StatusEffectController:Init(Core)
 	self.Core = Core
 	self.StatusEffectSignal = Signal.new()
@@ -34,13 +36,20 @@ function StatusEffectController:Init(Core)
 
 	self.CharacterController.CharacterLoaded:Connect(function()
 		self:_captureDefaults()
-		for _, effectName in ipairs(self.Effects) do
-			self:_handleStatusEffect(effectName, true)
-		end
+
+		--[[for _, effectName in ipairs(self.Effects) do
+					self:_handleStatusEffect(effectName, true)
+				end]] --son im crine why would you want to preserve the staus effect after respawn
+		
+
+				
+		
 	end)
 	self:_captureDefaults()
 
 	self.StatusEffectEvent:Connect(function(effectName, applied)
+		--handles table storing of status effects and stuff. 
+		--can only have one status effect present(duh)
 		if applied then
 			if table.find(self.Effects, effectName) == nil then
 				table.insert(self.Effects, effectName)
@@ -53,20 +62,23 @@ function StatusEffectController:Init(Core)
 		end
 
 		self.StatusEffectSignal:Fire(effectName, applied)
-		self:_handleStatusEffect(effectName, applied)
+		self:ToggleStatusEffect(effectName, applied)
 	end)
 end
 
-function StatusEffectController:_handleStatusEffect(effectName, applied)
-	if effectName == "Ragdoll" and applied then
-		print("ragdoll")
-		return
-	end
-
-	if effectName == "SpeedBoost" then
-		self:_applySpeedBoost(applied)
+function StatusEffectController:ToggleStatusEffect(effectName, applied)
+	if not self.CharacterController.Character then return end --should be able to apply status effects with a dead character
+	if effectName then
+		if effectName == "Ragdoll" then
+			UtilFunctions.ToggleRagdoll(self.CharacterController.Character, applied)
+		elseif effectName == "SpeedBoost" then
+			self:_applySpeedBoost(applied)
+		end
 	end
 end
+
+
+
 
 function StatusEffectController:_captureDefaults()
 	local cfg = self.CharacterController and self.CharacterController.ParkourConfig
@@ -129,7 +141,13 @@ function StatusEffectController:_setSpeedBoostVfxEnabled(enabled: boolean)
 
 	vfxJanitor:Add(assert(SpeedLines:Play(conf.SpeedLinesRate)), "Cleanup")
 	vfxJanitor:Add(
-		assert(ScreenEffects.Vignette(conf.VignetteColor, conf.VignetteTargetTransparency, conf.VignetteInitialTransparency)),
+		assert(
+			ScreenEffects.Vignette(
+				conf.VignetteColor,
+				conf.VignetteTargetTransparency,
+				conf.VignetteInitialTransparency
+			)
+		),
 		true
 	)
 
@@ -156,8 +174,5 @@ function StatusEffectController:HasEffect(player, effectName: string)
 		or (table.find(self.Effects, effectName) ~= nil)
 end
 
-function StatusEffectController:OnStatusEffectApplied(callback)
-	return self.StatusEffectSignal:Connect(callback)
-end
 
 return StatusEffectController

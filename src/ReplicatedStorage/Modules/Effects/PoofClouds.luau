@@ -16,7 +16,7 @@ function PoofClouds:Play(data)
 	local Pos = data.Position
 
 	local Effect: Attachment = GeneralEffects.PoofClouds:Clone()
-	Effect.Parent = workspace.VisualEffectsCache
+	Effect.Parent = workspace.SpatialQueryBlacklist
 	Effect.CFrame = CFrame.new(Pos)
 
 	Functions.Emit(Effect)

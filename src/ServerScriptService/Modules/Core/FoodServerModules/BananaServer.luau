@@ -90,7 +90,7 @@ function BananaServer:SpawnBananaPeel(data, owner)
 	local RayDir = Vector3.yAxis * -4
 	local Params = RaycastParams.new()
 	Params.FilterType = Enum.RaycastFilterType.Exclude
-	Params.FilterDescendantsInstances = { workspace.VisualEffectsCache }
+	Params.FilterDescendantsInstances = { workspace.SpatialQueryBlacklist }
 	local PeelRay = workspace:Raycast(RayOrigin, RayDir)
 	
 	if not PeelRay then
@@ -98,7 +98,7 @@ function BananaServer:SpawnBananaPeel(data, owner)
 	end
 
 	local BananaPeel = ReplicatedStorage.Assets.Food.Banana.BananaPeel:Clone()
-	BananaPeel.Parent = workspace.VisualEffectsCache
+	BananaPeel.Parent = workspace.SpatialQueryBlacklist
 	BananaPeel.CanQuery = false
 	BananaPeel.CanCollide = false
 	BananaPeel.Anchored = true

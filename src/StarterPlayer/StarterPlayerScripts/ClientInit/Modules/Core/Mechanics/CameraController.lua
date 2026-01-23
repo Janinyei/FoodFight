@@ -116,7 +116,7 @@ function CameraController:Init(Core)
 
 	--springs--
 	self.OffsetSpring = Spring.new(Vector3.zero)
-	self.OffsetSpring.Damper = 0.7
+	self.OffsetSpring.Damper = 0.95
 
 	self.CameraLerpSpring = Spring.new(Vector3.zero)
 
@@ -169,21 +169,27 @@ function CameraController:Start()
 
 	local CameraLerpSpring = self.CameraLerpSpring
 	--test.Damper = 0.65
-	CameraLerpSpring.Speed = 50
+	CameraLerpSpring.Speed = 500
 
 	--constant camera spring update
 	self.ShiftLockJanitor:Add(
 		RunService.RenderStepped:Connect(
-			function(dt) --probably don't need a janitor since this isn't being cleaned up but you never know
+			function(dt) 
 				CameraLerpSpring.Target = Camera.CFrame.Position
 
+				--[[
 				if self.Aiming then --allows for stable aiming
-					Camera.CFrame = Camera.CFrame * CFrame.new(self.OffsetSpring.Position)
-				else
-					Camera.CFrame = ((Camera.CFrame - Camera.CFrame.Position) + CameraLerpSpring.Position)
-						* CFrame.new(self.OffsetSpring.Position)
-				end
+				
+									Camera.CFrame = Camera.CFrame * CFrame.new(self.OffsetSpring.Position)
+								else
+								
+									Camera.CFrame = ((Camera.CFrame - Camera.CFrame.Position) + CameraLerpSpring.Position)
+										* CFrame.new(self.OffsetSpring.Position)
+								end
+				]]
+				
 
+				Camera.CFrame = Camera.CFrame * CFrame.new(self.OffsetSpring.Position)
 				-- 1. Clean up/Undo previous frame's offsets to prevent accumulation
 				Camera.CFrame = Camera.CFrame * self.LastRecoilCF:Inverse() * self.LastShakeCF:Inverse()
 

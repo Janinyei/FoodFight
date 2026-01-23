@@ -103,7 +103,7 @@ function Core:Start()
 				if typeof(LoadedModule) == "table" and LoadedModule.Start then
 					local startSuccess, err = pcall(LoadedModule.Start, LoadedModule, self)
 					if not startSuccess then
-						warn(string.format("[Core] Init error in '%s': %s", data.name, err))
+						warn(string.format("[Core] Start error in '%s': %s", data.name, err))
 					end
 				end
 			end

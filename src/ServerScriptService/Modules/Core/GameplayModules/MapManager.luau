@@ -37,10 +37,10 @@ function MapManager:LoadMap(mapName: string)
 	local mapClone = mapTemplate:Clone()
 	mapClone.Parent = workspace.Map
 
-	if mapClone:FindFirstChild("Map") and mapClone.Map:IsA("Model") then
-		mapClone.Map:PivotTo(CFrame.new(0, 0, 0))
+	if  mapClone:IsA("Model") then
+		mapClone:PivotTo(CFrame.new(0, 0, 0))
 	else
-		warn("map folder needs a model named 'Map' to properly position map. Please add the model and reload the game")
+		warn("map must be a model to position correctly")
 	end
 
 	self.CurrentMap = mapName

@@ -109,6 +109,7 @@ function VoteManager:GetWinners()
 		local winner = self.OptionData[category][1]
 		local maxVotes = -1
 
+		print(self.OptionData)
 		for optionName, players in pairs(self.VoteCache[category]) do
 			if #players > maxVotes then
 				maxVotes = #players

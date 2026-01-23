@@ -23,8 +23,6 @@ function Voting:InitMode(Core)
 end
 
 function Voting:StartMode()
-	print("starting voting")
-
 	self.VoteManager:EnableVoting()
 end
 
@@ -43,6 +41,11 @@ function Voting:OnComplete()
 	local Map, Mode = self.VoteManager:GetWinners()
 	self.MapManager:LoadMap(Map)
 
+	--set the current map and current mode here
+
+	self.GameManager.GameData.CurrentMap = Map
+	self.GameManager.GameData.CurrentMode = Mode
+
 	--enable spawning using charactermanager
 
     --create & balance teams
@@ -51,7 +54,7 @@ function Voting:OnComplete()
 
     print(self.TeamManager.Teams)
 
-	task.delay(5, function()
+	task.delay(1.5, function()
 		--enable match stats--
 
 		self.MatchStatsManager:LoadAllPlayers()

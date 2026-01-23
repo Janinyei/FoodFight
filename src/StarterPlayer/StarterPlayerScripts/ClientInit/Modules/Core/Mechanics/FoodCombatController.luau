@@ -147,7 +147,7 @@ function FoodCombatController:StartAim()
 		return
 	end
 
-	self.TrajectoryBeam:Enable(function()
+	--[[self.TrajectoryBeam:Enable(function()
 		return {
 			Origin = HRP.Position,
 			Velocity = ((Mouse.Hit.Position - HRP.Position).Unit * FoodModule.Config.Projectile.Speed)
@@ -155,7 +155,8 @@ function FoodCombatController:StartAim()
 			Gravity = self.FoodModules[self.CurrentFood].Config.Projectile.Acceleration,
 			RaycastParams = self.ProjectileController.RaycastParams,
 		}
-	end)
+	end)]]
+
 end
 
 function FoodCombatController:StopAim()

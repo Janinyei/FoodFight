@@ -34,8 +34,7 @@ function Intermission:StartMode()
     
     --clean up map--
     self.MapManager:CleanupCurrentMap()
-    self.GameManager.InGame = false
-
+ 
     --disable combat--
 
 

@@ -12,6 +12,9 @@ function KOH:InitMode(Core)
 	self.TeamManager = Core:Get("TeamManager")
 	self.MatchStatsManager = Core:Get("MatchStatsManager")
 	self.FoodCombatManager = Core:Get("FoodCombatManager")
+	self.GameManager = Core:Get("GameManager")
+
+
 end
 
 function KOH:StartMode()
@@ -23,9 +26,9 @@ function KOH:StartMode()
 	self.MatchStatsManager:ResetTeamScores()
 	
 	self.Zones = {}
-	local map = workspace:FindFirstChild("Map")
+	local map = workspace.Map:FindFirstChild(self.GameManager.GameData.CurrentMap)
 	if map then
-		local zonesFolder = map:FindFirstChild("GamePlay"):FindFirstChild("HillZones")
+		local zonesFolder = map:FindFirstChild("Gameplay"):FindFirstChild("HillZones")
 		if zonesFolder then
 			for _, zone in pairs(zonesFolder:GetChildren()) do
 				if zone:IsA("BasePart") then

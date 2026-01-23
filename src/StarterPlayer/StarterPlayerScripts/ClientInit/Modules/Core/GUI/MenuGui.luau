@@ -16,9 +16,15 @@ local ClientUtils = PlayerScripts.ClientInit.Modules.Utils
 local ItemIndex = require(ReplicatedStorage.Modules.Info.ItemIndex)
 local RarityIndex = require(ReplicatedStorage.Modules.Info.RarityIndex)
 local TweenUtils = require(ClientUtils.TweenUtils)
+local AnimNation = require(ReplicatedStorage.Modules.Utils.AnimNation)
+
+--spring data--
+local DefaultSpring = { Speed = 5, Damper = 0.9 }
+local FastSpring = { Speed = 8, Damper = 0.6 }
+
+--Gui--
 
 function MenuGui:Init(Core)
-	self.MenuScreen = PlayerGui.Menu
 	self.ClientDataController = Core:Get("ClientDataController")
 	self.ScreenGuiController = Core:Get("ScreenGuiController")
 	self.MouseController = Core:Get("MouseController")
@@ -26,25 +32,79 @@ function MenuGui:Init(Core)
 	self.InventoryEvent = Core:Get("SharedRemotes"):GetEvent("InventoryEvent")
 	self.GameController = Core:Get("GameController")
 
-	--loads menu components--
+	--GUI--
+	self.MenuScreen = PlayerGui.Menu
+	self.Timer = PlayerGui.Timer
+	self.MenuButtons = self.MenuScreen.MenuButtons
+
+	self.ScreenGuiController.ScreenState.StateChanged:Connect(function(old, new)
+		if new == "Menu" then
+			self:OnToggle(true, old)
+		elseif old == "Menu" then
+			self:OnToggle(false, new)
+		end
+	end)
+end
+
+function MenuGui:Start()
+	--load menu components and stuff lol
 
 	self:InitMenuButtons()
 	self:InitPlayButton()
-	self:InitProgressionGui()
-	--	self:InitCurrencyGui()
-	--	self:InitBottomFrame()
-	--	self:InitInventoryGui()
+	self:InitCurrencyGui()
 end
+--state management--
 
-function MenuGui:Start() end
+function MenuGui:OnToggle(Open: boolean, otherState: string)
+	local MenuButtons = self.MenuScreen.MenuButtons
+	local Progression = self.MenuScreen.Progression
+	local Currency = self.MenuScreen.Currency
+	local PlayButton = self.MenuScreen.PlayButton
+	local TimerFrame = self.Timer.TimerFrame
+
+	if Open then
+		self.MenuScreen.Enabled = true
+
+		AnimNation.target(MenuButtons, DefaultSpring, { Position = UDim2.fromScale(0.015, 0.5) })
+		AnimNation.target(Progression, DefaultSpring, { Position = UDim2.fromScale(0.5, 0.85) })
+		AnimNation.target(Currency, DefaultSpring, { Position = UDim2.fromScale(0.725, 0.95) })
+
+		--timer and play button dynamic
+		if self.GameController.GameData.InGame == true then
+			AnimNation.target(PlayButton, DefaultSpring, { Position = UDim2.fromScale(0.5, 0.015) })
+
+			AnimNation.target(TimerFrame, DefaultSpring, { Position = UDim2.fromScale(0.5, 0.2) })
+		else
+			AnimNation.target(PlayButton, DefaultSpring, { Position = UDim2.fromScale(0.5, -0.5) })
+			AnimNation.target(TimerFrame, DefaultSpring, { Position = UDim2.fromScale(0.5, 0.1) })
+		end
+	else
+		AnimNation.target(MenuButtons, { Speed = 5, Damper = 0.85 }, { Position = UDim2.fromScale(-0.5, 0.5) })
+		AnimNation.target(Progression, DefaultSpring, { Position = UDim2.fromScale(0.5, 1.5) })
+
+		AnimNation.target(PlayButton, FastSpring, { Position = UDim2.fromScale(0.5, -0.5) })
+		AnimNation.target(TimerFrame, FastSpring, { Position = UDim2.fromScale(0.5, -0.5) })
+
+		--  hide currency when spawning n shi
+		if otherState == "HUD" then
+			AnimNation.target(Currency, DefaultSpring, { Position = UDim2.fromScale(0.725, 1.5) })
+
+			--disable screen gui
+			task.delay(1, function()
+				if self.ScreenGuiController.ScreenState:GetState() ~= "Menu" then
+					self.MenuScreen.Enabled = false
+				end
+			end)
+		end
+	end
+end
 
 --Menu Buttons--
 function MenuGui:InitMenuButtons()
-	local MenuButtons = self.MenuScreen.MenuButtons
 	local MenuFrameDefaultColor = Color3.fromRGB(30, 30, 30)
 	local MenuPrimaryColors = {
 		["Inventory"] = Color3.fromRGB(96, 125, 255),
-		["Shop"] = Color3.fromRGB(117, 71, 255),
+		["Store"] = Color3.fromRGB(117, 71, 255),
 		["Missions"] = Color3.fromRGB(180, 255, 137),
 		["Settings"] = Color3.fromRGB(172, 172, 172),
 		["Crates"] = Color3.fromRGB(255, 156, 35),
@@ -53,7 +113,7 @@ function MenuGui:InitMenuButtons()
 
 	--replace dark color with color theme on hover
 
-	for _, buttonFrame: GuiObject in MenuButtons:GetChildren() do
+	for _, buttonFrame: GuiObject in self.MenuButtons:GetChildren() do
 		if not buttonFrame:IsA("Frame") then
 			continue
 		end
@@ -63,10 +123,20 @@ function MenuGui:InitMenuButtons()
 		--set initial colors--
 
 		buttonFrame.ImageLabel.ImageColor3 = PrimaryColor
-		buttonFrame.BackgroundColor3 = PrimaryColor
+		buttonFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+
+		buttonFrame.Button.MouseButton1Click:Connect(function()
+			local frameName = buttonFrame.Name
+			if PlayerGui:FindFirstChild(frameName) then
+				self.ScreenGuiController.ScreenState:SetState(frameName)
+
+				task.delay(3, function()
+					self.ScreenGuiController.ScreenState:SetState("Menu")
+				end)
+			end
+		end)
 
 		buttonFrame.MouseEnter:Connect(function()
-
 			if PrimaryColor then
 				TweenService:Create(
 					buttonFrame,
@@ -84,7 +154,6 @@ function MenuGui:InitMenuButtons()
 		end)
 
 		buttonFrame.MouseLeave:Connect(function()
-
 			--	buttonFrame.BackgroundColor3 = MenuFrameDefaultColor
 
 			TweenService:Create(
@@ -104,47 +173,45 @@ end
 function MenuGui:InitPlayButton()
 	--load as flat or whatever
 	--the menu timer will be modified in the timergui script isntead of here
-	local TopArea = self.MenuScreen.TopArea
-	local Top = TopArea.Top
-	local PlayButton = Top.PlayButton
 
-	local InitHeight = Top.Size.Y.Scale
+	local PlayButton = self.MenuScreen.PlayButton
+	local HideY = -0.2
+	local DockY = 0.015
 
-	Top.Size = UDim2.fromScale(Top.Size.X.Scale, 0) --flatten
+	local TimerFrame = PlayerGui.Timer.TimerFrame --need to move timer along with button
+
+	--initial load--
+
+	PlayButton.Position = UDim2.fromScale(0.5, HideY)
+	TimerFrame.Position = UDim2.fromScale(0.5, 0.1)
 
 	--set up event to change
 	self.GameController.GameDataChanged:Connect(function(data)
+		print("data changed play button")
+
+		if not self.ScreenGuiController.ScreenState:IsState("Menu") then return end
 		if data.InGame == true then
-			TweenService:Create(
-				Top,
-				TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut),
-				{ Size = UDim2.fromScale(Top.Size.X.Scale, InitHeight) }
-			):Play()
+			AnimNation.target(PlayButton, DefaultSpring, { Position = UDim2.fromScale(0.5, 0.015) })
+
+			AnimNation.target(TimerFrame, DefaultSpring, { Position = UDim2.fromScale(0.5, 0.2) })
 		else
-			TweenService:Create(
-				Top,
-				TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut),
-				{ Size = UDim2.fromScale(Top.Size.X.Scale, 0) }
-			):Play()
+			AnimNation.target(PlayButton, DefaultSpring, { Position = UDim2.fromScale(0.5, -0.5) })
+			AnimNation.target(TimerFrame, DefaultSpring, { Position = UDim2.fromScale(0.5, 0.1) })
 		end
 	end)
 
 	TweenUtils.GrowOnHover(
 		PlayButton,
 		PlayButton.UIScale,
-		0.1,
+		0.05,
 		TweenInfo.new(0.35, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut)
 	)
 
-	TweenUtils.ButtonClickTween(PlayButton, PlayButton.UIScale, 0.1, function()
-		self.CharacterEvent:Invoke(8, "Spawn")
+	TweenUtils.ButtonClickTween(PlayButton.Button, PlayButton.UIScale, 0.1, function()
+		self.ScreenGuiController.ScreenState:SetState("HUD")
+
 	end)
 end
-
-function MenuGui:OnClose()
-	
-end
-
 
 --Progression Gui--
 function MenuGui:InitProgressionGui()
@@ -153,14 +220,13 @@ function MenuGui:InitProgressionGui()
 	local ProgressionGui = self.ProgressionGui
 
 	local ProgBarContainer = ProgressionGui.Container
-	local ProgBar = Container.ProgBar
+	local ProgBar = ProgBarContainer.ProgBar
 	local PlayerName = self.ProgressionGui.PlayerName
 
 	self.ClientDataController.ProgressionChanged:Connect(function(ProgressionData)
 		local MaxExp = math.ceil((ProgressionData.Level / 2) * math.log10((ProgressionData.Level + 1) ^ 2) * 100 + 100) --just copied the formula
 		--level text
 		ProgressionGui.Progression.LevelNum.Text = tostring(ProgressionData.Level)
-
 
 		--exp bar text and sizing
 		ProgBarContainer.ExpAmount.Text = tostring(ProgressionData.Exp) .. " | " .. tostring(MaxExp)
@@ -173,19 +239,15 @@ function MenuGui:InitProgressionGui()
 
 		local Stats = ProgressionData.Stats
 
-		for statName, statValue in Stats do 
-			
+		for statName, statValue in Stats do
 		end
 	end)
 end
-
-
-
---old code below--
+--
 
 --Currency Gui--
 function MenuGui:InitCurrencyGui()
-	self.CurrencyGui = self.MenuScreen.Container.CurrencyFrame
+	self.CurrencyGui = self.MenuScreen.Currency
 	local CurrencyGui = self.CurrencyGui
 
 	self.ClientDataController.CurrencyChanged:Connect(function(CurrencyData)
@@ -206,41 +268,13 @@ function MenuGui:InitCurrencyGui()
 			TweenUtils.ButtonClickTween(BuyMoreFrame.Button, BuyMoreFrame.UIScale, 0.05, function()
 				print("Buy more " .. UIFrame.Name .. " clicked")
 				--open store screen
-				self.ScreenGuiController:SetScreen("Store")
+				self.ScreenGuiController.ScreenState:SetState("Store")
 			end)
 		end
 	end
 end
 
---Bottom Frame
-function MenuGui:InitBottomFrame()
-	self.BottomFrame = self.MenuScreen.Container.BottomFrame
-	local PlayButton = self.BottomFrame.PlayButton
-	local StoreButton = self.BottomFrame.StoreButton
-	local SettingsButton = self.BottomFrame.SettingsButton
-
-	for _, UIFrame in self.BottomFrame:GetChildren() do
-		if UIFrame:IsA("GuiObject") and UIFrame:FindFirstChild("UIScale") then
-			TweenUtils.GrowOnHover(
-				UIFrame,
-				UIFrame.UIScale,
-				0.1,
-				TweenInfo.new(1, Enum.EasingStyle.Elastic, Enum.EasingDirection.Out)
-			)
-
-			TweenUtils.ButtonClickTween(UIFrame.Button, UIFrame.UIScale, 0.05, function()
-				--button functionality goes here--
-				if UIFrame == PlayButton then
-					self.CharacterEvent:Invoke(8, "Spawn")
-				elseif UIFrame == StoreButton then
-					self.ScreenGuiController:SetScreen("Store")
-				elseif UIFrame == SettingsButton then
-					self.ScreenGuiController:SetScreen("Settings")
-				end
-			end)
-		end
-	end
-end
+--old stuff--
 
 function MenuGui:InitInventoryGui()
 	self.InventoryGui = self.MenuScreen.Container.InventoryContainer

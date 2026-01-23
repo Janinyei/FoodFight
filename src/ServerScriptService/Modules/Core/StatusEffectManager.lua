@@ -31,7 +31,7 @@ end
 
 function StatusEffectManager:Start()
     self.StatusEffectEvent:Connect(function(plr, action)
-        
+        --lowk prob not necessary
     end)
 end
 
@@ -76,6 +76,15 @@ function StatusEffectManager:RemoveEffect(plr: Player, effectName: string)
     end
     
     return false
+end
+
+function StatusEffectManager:RemoveAllEffects(plr : Player)
+    local effectTable = self.EffectedPlayers[plr]
+    if not effectTable then return false end
+
+    for _, effectName in effectTable do
+        self:RemoveEffect(plr, effectName)
+    end
 end
 
 

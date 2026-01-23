@@ -27,7 +27,7 @@ function FoodSplat:Play(data)
     local Decal = DecalPart.Decal
 
     DecalPart.Transparency = 1
-    DecalPart.Parent = workspace.VisualEffectsCache --make sure to use so raycast ignores are easier
+    DecalPart.Parent = workspace.SpatialQueryBlacklist --make sure to use so raycast ignores are easier
     DecalPart.Position = data.Position
     DecalPart.Size = Vector3.new(data.Radius, data.Radius, 0.1)
     

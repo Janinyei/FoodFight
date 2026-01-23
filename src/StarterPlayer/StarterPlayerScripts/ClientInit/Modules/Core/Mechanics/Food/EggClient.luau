@@ -280,7 +280,7 @@ function EggClient:PlayEggHitVFX(data)
 
 	local EggSplash = EggVFXFolder.EggSplash:Clone()
 	EggSplash.Position = data.Projectile.HitResult.Position
-	EggSplash.Parent = workspace.VisualEffectsCache
+	EggSplash.Parent = workspace.SpatialQueryBlacklist
 	Debris:AddItem(EggSplash, 5)
 
 	Functions.Emit(EggSplash)

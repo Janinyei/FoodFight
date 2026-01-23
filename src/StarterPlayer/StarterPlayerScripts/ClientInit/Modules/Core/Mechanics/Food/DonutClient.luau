@@ -199,7 +199,7 @@ function DonutClient:_animateBoomerang(
 	end
 	primary.Anchored = true
 
-	model.Parent = workspace.VisualEffectsCache or workspace
+	model.Parent = workspace.SpatialQueryBlacklist or workspace
 	primary.CFrame = CFrame.new(origin, origin + direction)
 
 	local rayParams = self.ProjectileController and self.ProjectileController.RaycastParams

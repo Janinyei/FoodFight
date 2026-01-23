@@ -30,7 +30,7 @@ end
 function MatchStatsManager:Start()
 
 	Players.PlayerAdded:Connect(function(player)
-		if self.GameManager.InGame then  
+		if self.GameManager.GameData.InGame then  
 			self:LoadPlayer(player)
 		end
 	end)

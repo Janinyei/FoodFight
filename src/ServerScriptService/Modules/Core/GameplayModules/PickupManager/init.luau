@@ -1,3 +1,6 @@
+--manages physical items that can be picked up
+--tzu made ts idk when he did
+
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Functions = require(ReplicatedStorage.Modules.Utils.Functions)
@@ -39,7 +42,7 @@ function PickupManager:Start()
 
 	local rayParams = RaycastParams.new()
 	rayParams.FilterType = Enum.RaycastFilterType.Exclude
-	rayParams.FilterDescendantsInstances = { self.PickupsFolder, spawnZone, workspace.VisualEffectsCache }
+	rayParams.FilterDescendantsInstances = { self.PickupsFolder, spawnZone, workspace.SpatialQueryBlacklist }
 
 	local activeCount = 0
 

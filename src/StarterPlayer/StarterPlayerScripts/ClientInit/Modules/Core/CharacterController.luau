@@ -8,7 +8,6 @@ local RunService = game:GetService("RunService")
 local LocalPlayer = Players.LocalPlayer
 local Debris = game:GetService("Debris")
 
-
 local Camera = workspace.CurrentCamera
 
 local Modules = ReplicatedStorage.Modules
@@ -85,22 +84,15 @@ function CharacterController:SetupCharacter(char: Model)
 		self.CameraOrientation = ao
 	end
 
-
-
 	self.ParkourConfig = {
 		--Movement--
-		walkAlpha = 8, --smooth walking
 		baseSpeed = 20,
 		maxWalkSpeed = 30, --max walkspeed
-		runAccel = 2,
+		runAccel = 10,
 		currentMomentum = 0, -- Tracks our "speed bank"
 		targetMomentum = 20,
-		momentumGainSpeed = 5,
-		momentumDecayRate = 100, -- How fast speed drops when not slide-hopping
-		momentumWindow = 0.5, -- Time allowed between jumps before speed resets
-		lastJumpTick = tick(), --slide hop jumptick
-		linearVeloMaxForce = 100000,
-		
+		linearVeloMaxForce = 10000,
+
 		--crouching--
 		isCrouching = false,
 		crouchHeight = -1.5,
@@ -111,7 +103,7 @@ function CharacterController:SetupCharacter(char: Model)
 		characterRotSpeed = 5,
 		tiltSpeed = 10,
 		maxTiltAngle = 10,
-		rotateHRPWithCamera = false,
+		rotateHRPWithCamera = true,
 		defaultC0 = self.HRP.RootJoint.C0,
 
 		--vaulting--
@@ -148,7 +140,7 @@ function CharacterController:SetupCharacter(char: Model)
 	--ray params--
 	local RayParams = RaycastParams.new()
 	RayParams.FilterType = Enum.RaycastFilterType.Exclude
-	RayParams.FilterDescendantsInstances = { workspace.VisualEffectsCache, self.Character }
+	RayParams.FilterDescendantsInstances = { workspace.SpatialQueryBlacklist, self.Character }
 
 	self.ParkourRayParams = RayParams
 	self.ParkourStates = self._janitor:AddObject(StateMachine.new()) --state machine
@@ -160,22 +152,20 @@ function CharacterController:SetupCharacter(char: Model)
 	local char = self.Character
 	local hrp = self.HRP
 
-	
 	--parkour vars
 	local ParkourStates = self.ParkourStates
 	local ParkourConfig = self.ParkourConfig
 
 	--setup movement motor--
-		local moveVelocity = Instance.new("LinearVelocity")
-		moveVelocity.Name = "MovementMotor"
-		moveVelocity.Attachment0 = hrp.RootAttachment
-		moveVelocity.ForceLimitMode = Enum.ForceLimitMode.PerAxis
-		moveVelocity.MaxAxesForce = Vector3.new(1, 0, 1) * ParkourConfig.linearVeloMaxForce -- Force on X and Z, 0 on Y
-		moveVelocity.VelocityConstraintMode = Enum.VelocityConstraintMode.Vector
-		moveVelocity.VectorVelocity = Vector3.zero
-		moveVelocity.Parent = hrp
-		self.MoveMotor = moveVelocity
-	
+	local moveVelocity = Instance.new("LinearVelocity")
+	moveVelocity.Name = "MovementMotor"
+	moveVelocity.Attachment0 = hrp.RootAttachment
+	moveVelocity.ForceLimitMode = Enum.ForceLimitMode.PerAxis
+	moveVelocity.MaxAxesForce = Vector3.new(1, 0, 1) * ParkourConfig.linearVeloMaxForce -- Force on X and Z, 0 on Y
+	moveVelocity.VelocityConstraintMode = Enum.VelocityConstraintMode.Vector
+	moveVelocity.VectorVelocity = Vector3.zero
+	moveVelocity.Parent = hrp
+	self.MoveMotor = moveVelocity
 
 	--set up bind actions--
 	--setup input management--
@@ -208,7 +198,7 @@ function CharacterController:SetupCharacter(char: Model)
 
 					if LedgeRay then
 						ParkourStates:SetState("Vaulting")
-						self.AudioController:PlayAudio({Name = 'vault', Source = self.Character})
+						self.AudioController:PlayAudio({ Name = "vault", Source = self.Character })
 						--	hrp:ApplyImpulse(Vector3.yAxis * 100 * hrp:GetMass())
 					end
 
@@ -262,7 +252,7 @@ function CharacterController:SetupCharacter(char: Model)
 	hum.AutoRotate = false --very necessary
 	hum.JumpPower = ParkourConfig.baseJumpPower
 
-	--workspace.Gravity = ParkourConfig.baseGravity
+	workspace.Gravity = ParkourConfig.baseGravity
 
 	hum.Died:Connect(function()
 		self:_humanoidDied()
@@ -302,8 +292,7 @@ function CharacterController:SetupCharacter(char: Model)
 		self:_slideUpdate(dt)
 	end))
 
-self.CharacterLoaded:Fire(char, hum)
-
+	self.CharacterLoaded:Fire(char, hum)
 end
 
 function CharacterController:GetCharacter()
@@ -339,50 +328,35 @@ end
 
 --handles walking movement stuff
 function CharacterController:_updateMovement(dt)
-	local hum = self.Humanoid
-	local hrp = self.HRP
-	local moveMotor = self.MoveMotor
 	local config = self.ParkourConfig
-	local moveDir = hum.MoveDirection
+	local moveMotor = self.MoveMotor
+	local moveDir = self.Humanoid.MoveDirection
 
 	if self.ParkourStates:IsState("Sliding") then
 		return
 	end
 
-	local isAirborne = hum:GetState() == Enum.HumanoidStateType.Freefall
-		or hum:GetState() == Enum.HumanoidStateType.Jumping
-	local withinWindow = (tick() - config.lastJumpTick) < config.momentumWindow
+	-- REMOVED: No more momentum drift or window checking
+	config.currentMomentum = config.maxWalkSpeed
+	config.targetMomentum = config.maxWalkSpeed
 
-	-- 1. SMOOTH MOMENTUM DRIFT
-	-- We lerp the 'currentMomentum' toward the 'targetMomentum'
-	-- This turns the "snappy" boost into a smooth surge
-	config.currentMomentum =
-		UtilFunctions.Lerp(config.currentMomentum, config.targetMomentum, dt * config.momentumGainSpeed)
+	local finalTargetSpeed = config.maxWalkSpeed
 
-	-- 2. NATURAL DECAY
-	if not isAirborne and not withinWindow then
-		-- Gradually lower the target if we aren't hopping
-		--  config.targetMomentum = math.max(config.maxWalkSpeed, config.targetMomentum - (config.momentumDecayRate * dt))
-		config.targetMomentum = config.maxWalkSpeed
-	end
-
-	-- 3. CALCULATE MOTOR VELOCITY
-	local finalTargetSpeed = math.max(config.maxWalkSpeed, config.currentMomentum)
-	if config.isCrouching and not isAirborne then
+	if config.isCrouching and not (self.Humanoid:GetState() == Enum.HumanoidStateType.Freefall) then
 		finalTargetSpeed = config.crouchSpeed
 	end
 
 	local targetVel = moveDir * finalTargetSpeed
+	local accel = moveDir.Magnitude > 0 and config.runAccel or 3.5
 
-	-- 4. APPLY TO MOTOR
-	-- Use a lower alpha for air control so you can "swing" around corners
-	local accel = isAirborne and 2 or config.runAccel
 	moveMotor.VectorVelocity = moveMotor.VectorVelocity:Lerp(targetVel, dt * accel)
 
-	local targetHeight = (config.isCrouching) and config.crouchHeight or 0
-		hum.HipHeight = UtilFunctions.Lerp(hum.HipHeight, targetHeight, dt * config.crouchTransitionSpeed)
+	-- Handle HipHeight for crouching
+	local targetHeight = config.isCrouching and config.crouchHeight or 0
+	self.Humanoid.HipHeight =
+		UtilFunctions.Lerp(self.Humanoid.HipHeight, targetHeight, dt * config.crouchTransitionSpeed)
 
-	hum.WalkSpeed = 0
+	self.Humanoid.WalkSpeed = 0
 end
 
 --controls leaning and root part orientation
@@ -459,7 +433,6 @@ function CharacterController:_vaultUpdate(dt)
 
 	if self.ParkourStates:IsState("Vaulting") then
 		hrp.AssemblyLinearVelocity = Vector3.new(hrp.AssemblyLinearVelocity.X, 25, hrp.AssemblyLinearVelocity.Z)
-
 	end
 end
 
@@ -477,7 +450,7 @@ function CharacterController:_activateSlide()
 	then
 		print("slide trigger")
 
-		self.AudioController:PlayAudio({Name = "slideenter", Source = self.Character})
+		self.AudioController:PlayAudio({ Name = "slideenter", Source = self.Character })
 
 		local hum = self.Humanoid
 		local hrp = hum.RootPart
@@ -488,7 +461,7 @@ function CharacterController:_activateSlide()
 			self.ParkourStates:SetState("Sliding")
 			self.ParkourConfig.rotateHRPWithCamera = false
 			hum.AutoRotate = false
-		--	hum:ChangeState(Enum.HumanoidStateType.PlatformStanding)
+			--	hum:ChangeState(Enum.HumanoidStateType.PlatformStanding)
 
 			local cameraOrientation = self.CameraOrientation
 			if cameraOrientation then
@@ -527,9 +500,7 @@ function CharacterController:_slideUpdate(dt)
 	local RootJoint = hrp.RootJoint
 	self.Humanoid.AutoRotate = false
 
-
 	self.Humanoid.HipHeight = UtilFunctions.Lerp(hum.HipHeight, config.crouchHeight, dt * config.crouchTransitionSpeed)
-	
 
 	local DownRay = workspace:Raycast(self.HRP.Position, Vector3.yAxis * -5, self.ParkourRayParams)
 
@@ -563,9 +534,6 @@ function CharacterController:_slideUpdate(dt)
 	else
 		self:_deactivateSlide()
 	end
-
-	
-	
 end
 
 function CharacterController:_deactivateSlide()
@@ -601,21 +569,7 @@ function CharacterController:_deactivateSlide()
 end
 
 function CharacterController:_slideHop()
-	local config = self.ParkourConfig
-
-	-- Increase the GOAL, not the current speed
-	-- This ensures the next update frame handles the "smooth" transition
-	local speedGain = config.slideSpeedBoost
-	config.targetMomentum = math.clamp(config.targetMomentum + speedGain, 0, 100)
-
-	config.lastJumpTick = tick()
-
-	-- Directional logic
-	local camLook = Camera.CFrame.LookVector
-	local flatDir = Vector3.new(camLook.X, 0, camLook.Z).Unit
-	-- Note: Since your character handles jump automatically,
-	-- we only ensure the horizontal velocity is preserved here
-	print("New Speed: ", self.HRP.AssemblyLinearVelocity.Magnitude)
+	--removed mechanic
 end
 --multi jump--
 
@@ -623,7 +577,7 @@ function CharacterController:_multiJump()
 	if self.ParkourConfig.currentJumps < self.ParkourConfig.maxJumps and self.ParkourConfig.currentJumps >= 1 then
 		self.MultiJump:Fire()
 		local fx = ReplicatedStorage.Assets.Effects.Jump:Clone()
-		fx.Parent = workspace.VisualEffectsCache
+		fx.Parent = workspace.SpatialQueryBlacklist
 		local pos = self.HRP.Position - Vector3.yAxis * 2
 		local _, y, _ = self.HRP.CFrame:ToOrientation()
 		local cf = CFrame.new(pos) * CFrame.Angles(0, y, 0)

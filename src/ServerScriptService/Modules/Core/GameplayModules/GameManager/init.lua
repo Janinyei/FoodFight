@@ -25,8 +25,6 @@ function GameManager:GetSpawnPoint()
 	end
 end
 
-
-
 function GameManager:InitModes(Core)
 	local ModeFolder = script.Modes
 
@@ -49,8 +47,6 @@ function GameManager:Init(Core)
 	self.GameEvent = Core:Get("SharedRemotes"):GetEvent("GameEvent")
 	self.MatchStatsManager = Core:Get("MatchStatsManager")
 
-	
-	
 	--mode table--
 	self.ModesTable = {} --table of loaded modules
 	self:InitModes(Core)
@@ -63,14 +59,19 @@ function GameManager:Init(Core)
 		"FFA",
 		"TDM",
 		"KOH",
-		"CTF"
+		"CTF",
 	}
-
 
 	self.ActivePlayers = {}
 	self.PlayableModes = PlayableModes
 
-	self.InGame = false --indicates whether a game is active or not or in lobby/intermission
+	--game data and stuff
+	self.GameData = {
+		InGame = false,
+		ServerRegion = nil,
+		CurrentMode = "",
+		CurrentMap = "",
+	}
 end
 
 function GameManager:Start()
@@ -86,24 +87,28 @@ function GameManager:Start()
 	end)
 
 	self.Timer.OnComplete:Connect(function()
-
-        
-        if table.find(self.PlayableModes, self.CurrentMode.Name) ~= nil then
-            --automatically set to intermission for playable game modes so you don't have to repeat it constantly
-            self:SetMode("Intermission")
-			self.InGame = false
-
-        end
+		if table.find(self.PlayableModes, self.CurrentMode.Name) ~= nil then
+			--automatically set to intermission for playable game modes so you don't have to repeat it constantly
+			self:SetMode("Intermission")
+			self.GameData.InGame = false
+			self.GameEvent:Fires(true, self.GameData) --replicate
+		end
 
 		if self.CurrentMode.OnComplete then
 			self.CurrentMode:OnComplete()
 		end
-
 	end)
-
 
 	self.SpectateEvent:Connect(function(player)
 		return self.ActivePlayers
+	end)
+
+	--game event--
+
+	self.GameEvent:Connect(function(player, action)
+		if action == "GetGameData" then
+			return self.GameData
+		end
 	end)
 end
 
@@ -120,22 +125,15 @@ function GameManager:SetMode(ModeName: string)
 		self.Timer:SetTime(duration)
 
 		if table.find(self.PlayableModes, self.CurrentMode.Name) ~= nil then
-			self.InGame = true
-			self.GameEvent:Fires(true,{
-				InGame = self.InGame
-			})
+			self.GameData.InGame = true
+			self.GameEvent:Fires(true, self.GameData)
 		end
 	else
 		warn("Round: " .. ModeName .. " does not exist")
 	end
 end
 
-function GameManager:SetRandomGameMode()
-	local SelectedMode = self.PlayableModes[math.random(1, #self.PlayableModes)]
 
-	self:SetMode(SelectedMode)
-end
 
-function GameManager:SetMap() end
 
 return GameManager

@@ -4,6 +4,8 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
+local UtilFunctions = require(ReplicatedStorage.Modules.Utils.Functions)
+
 local function setAttachmentWorldPosition(att: Attachment, worldPos: Vector3)
 	local parentPart = att.Parent
 	if parentPart and parentPart:IsA("BasePart") then
@@ -46,6 +48,8 @@ function LaserEyes:PlayKillEffect(data, Core)
 	local killer = data.Killer
 	local victim = data.Victim
 
+	UtilFunctions.ToggleRagdoll(targetCharacter, true)
+
 	if killer and victim and killer == victim then
 		if targetCharacter then
 			local targetPart = targetCharacter:FindFirstChild("HumanoidRootPart") or targetCharacter:FindFirstChild("Head")
@@ -77,7 +81,7 @@ function LaserEyes:PlayKillEffect(data, Core)
 	end
 
 	local fx = template:Clone()
-	fx.Parent = workspace:FindFirstChild("VisualEffectsCache") or workspace
+	fx.Parent = workspace:FindFirstChild("SpatialQueryBlacklist") or workspace
 
 	local charge = fx:FindFirstChild("Charge", true)
 	local burst = fx:FindFirstChild("Burst", true)

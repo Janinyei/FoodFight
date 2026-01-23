@@ -9,6 +9,7 @@ local ProjectileController = {}
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
 local HttpService = game:GetService("HttpService")
+local CollectionService = game:GetService("CollectionService")
 
 --Modules--
 local Modules = ReplicatedStorage.Modules
@@ -33,8 +34,8 @@ DebugInstanceFolder.Name = "DebugInstances"
 function ProjectileController:Init(Core)
 	self.RaycastParams = RaycastParams.new()
 	self.RaycastParams.FilterType = Enum.RaycastFilterType.Exclude
-	self.AlwaysExcludedInstances = { DebugInstanceFolder, workspace.VisualEffectsCache }
-	self.Blacklist = { DebugInstanceFolder, workspace.VisualEffectsCache }
+	self.AlwaysExcludedInstances = { DebugInstanceFolder, workspace.SpatialQueryBlacklist, CollectionService:GetTagged("Hitbox") }
+	self.Blacklist = { DebugInstanceFolder, workspace.SpatialQueryBlacklist }
 	self.RaycastParams.FilterDescendantsInstances = self.Blacklist
 	self.DefaultHitRadius = 0.85
 
@@ -110,7 +111,7 @@ function ProjectileController:FireProjectile(Obj: Model | BasePart, ProjectileDa
 		ReplicatedProjectiles[ProjectileData.Id] = NewProj
 		--sets up different raycast params to avoid conflicts
 		local RayParams = RaycastParams.new()
-		local filter = { DebugInstanceFolder, workspace.VisualEffectsCache, Obj }
+		local filter = { DebugInstanceFolder, workspace.SpatialQueryBlacklist, Obj }
 		if NewProj.Owner.Character then
 			table.insert(filter, NewProj.Owner.Character)
 		end
