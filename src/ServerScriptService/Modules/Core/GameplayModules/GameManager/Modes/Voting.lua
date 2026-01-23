@@ -41,6 +41,8 @@ function Voting:OnComplete()
     --get vote winners
 	local Map, Mode = self.VoteManager:GetWinners()
 	self.MapManager:LoadMap(Map)
+	
+	--self.Core:Get("SharedRemotes"):GetEvent("MapIntroEvent"):Fires(true, Map)
 
 	--set the current map and current mode here
 

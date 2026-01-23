@@ -22,7 +22,8 @@ function SharedRemotes:Init()
 		"LeaderboardEvent",
 		"DeathEvent",
 		"SpectateEvent",
-		"KOHUpdate"
+		"KOHUpdate",
+		"MapIntroEvent"
 	}
 
 	self.Events = nil

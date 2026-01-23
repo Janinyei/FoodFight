@@ -127,6 +127,8 @@ function CameraController:Init(Core)
 
 	-- camera shaker --
 	self.Shaker = CameraShaker.new(Enum.RenderPriority.Camera.Value, function() end)
+
+	self.Enabled = true
 end
 
 function CameraController:Start()
@@ -175,6 +177,8 @@ function CameraController:Start()
 	self.ShiftLockJanitor:Add(
 		RunService.RenderStepped:Connect(
 			function(dt) 
+				if not self.Enabled then return end
+				
 				CameraLerpSpring.Target = Camera.CFrame.Position
 
 				--[[
@@ -408,6 +412,18 @@ end
 
 function CameraController:_updateMouseBehavior()
 	UIS.MouseBehavior = (self.ShiftLockEnabled and Enum.MouseBehavior.LockCenter) or Enum.MouseBehavior.Default
+end
+
+function CameraController:SetEnabled(State: boolean)
+	self.Enabled = State
+	
+	if State then
+		self:_updateMouseBehavior()
+		self:_adjustLockOffset()
+	else
+		UIS.MouseBehavior = Enum.MouseBehavior.Default
+		CameraUtils.restoreMouseIcon()
+	end
 end
 
 return CameraController
