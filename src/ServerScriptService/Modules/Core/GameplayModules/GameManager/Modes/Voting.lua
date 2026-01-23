@@ -41,13 +41,12 @@ function Voting:OnComplete()
     --get vote winners
 	local Map, Mode = self.VoteManager:GetWinners()
 	self.MapManager:LoadMap(Map)
-	
-	--self.Core:Get("SharedRemotes"):GetEvent("MapIntroEvent"):Fires(true, Map)
 
 	--set the current map and current mode here
-
 	self.GameManager.GameData.CurrentMap = Map
 	self.GameManager.GameData.CurrentMode = Mode
+	self.GameManager.GameData.PreviewingMap = true
+	self.GameManager.GameEvent:Fires(true, self.GameManager.GameData)
 
 	--enable spawning using charactermanager
 
@@ -56,11 +55,12 @@ function Voting:OnComplete()
     self.TeamManager:AutoAssignBalancedTeams()
 
     print(self.TeamManager.Teams)
-
+	
 	task.delay(GameConstants.POST_VOTE_DELAY, function()
 		--enable match stats--
 
 		self.MatchStatsManager:LoadAllPlayers()
+		self.GameManager.GameData.PreviewingMap = false
 		self.GameManager:SetMode(Mode)
 	end)
 end

@@ -7,7 +7,6 @@ local Signal = require(ReplicatedStorage.Modules.Utils.Signal)
 function MapIntroController:Init(Core)
 	self.Core = Core
 	self.SharedRemotes = Core:Get("SharedRemotes")
-	self.MapIntroEvent = self.SharedRemotes:GetEvent("MapIntroEvent")
 	self.CharacterEvent = self.SharedRemotes:GetEvent("CharacterEvent")
 	
 	self.RunService = game:GetService("RunService")
@@ -15,18 +14,25 @@ function MapIntroController:Init(Core)
 	self.Camera = workspace.CurrentCamera
 
 	self.Completed = Signal.new()
+	self.IsPlaying = false
+	self.LastMapPreviewed = ""
 end
 
 function MapIntroController:Start()
 	self.CameraController = self.Core:Get("CameraController")
-	self.Completed:Connect(function()
-		self.CharacterEvent:Fire("Spawn")
-	end)
+	self.GameController = self.Core:Get("GameController")
 
-	self.MapIntroEvent:Connect(function(mapName)
-		local mapModel = workspace.Map:FindFirstChild(mapName)
-		if mapModel then
-			self:Play(mapModel)
+	self.GameController.GameDataChanged:Connect(function(data)
+		if data.PreviewingMap then
+			if not self.IsPlaying and self.LastMapPreviewed ~= data.CurrentMap then
+				local mapModel = workspace.Map:FindFirstChild(data.CurrentMap)
+				if mapModel then
+					self.LastMapPreviewed = data.CurrentMap
+					self:Play(mapModel)
+				end
+			end
+		else
+			self.LastMapPreviewed = ""
 		end
 	end)
 end
@@ -40,6 +46,7 @@ function MapIntroController:Play(mapModel)
 		return
 	end
 
+	self.IsPlaying = true
 	self.CameraController:SetEnabled(false)
 
 	local oldType = self.Camera.CameraType
@@ -82,6 +89,7 @@ function MapIntroController:Play(mapModel)
 			self.Camera.FieldOfView = oldFOV
 			
 			self.CameraController:SetEnabled(true)
+			self.IsPlaying = false
 			self.Completed:Fire()
 		end
 	end)

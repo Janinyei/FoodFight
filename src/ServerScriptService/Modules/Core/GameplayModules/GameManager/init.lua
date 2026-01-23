@@ -66,6 +66,7 @@ function GameManager:Init(Core)
 	--game data and stuff
 	self.GameData = {
 		InGame = false,
+		PreviewingMap = false,
 		ServerRegion = nil,
 		CurrentMode = "",
 		CurrentMap = "",
