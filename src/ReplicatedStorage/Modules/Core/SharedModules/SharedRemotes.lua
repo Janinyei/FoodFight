@@ -21,7 +21,8 @@ function SharedRemotes:Init()
 		"VoteEvent",
 		"LeaderboardEvent",
 		"DeathEvent",
-		"SpectateEvent"
+		"SpectateEvent",
+		"KOHUpdate"
 	}
 
 	self.Events = nil

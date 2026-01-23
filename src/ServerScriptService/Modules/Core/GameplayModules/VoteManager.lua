@@ -81,9 +81,7 @@ function VoteManager:_refreshOptionData()
 	-- Setup Modes
 	local availableModes = table.clone(self.GameManager.PlayableModes)
 	for i = 1, 3 do
-		if #availableModes == 0 then
-			break
-		end
+		if #availableModes == 0 then break end
 		local randIndex = math.random(1, #availableModes)
 		local modeName = table.remove(availableModes, randIndex)
 		table.insert(self.OptionData.Modes, modeName)
@@ -93,9 +91,7 @@ function VoteManager:_refreshOptionData()
 	-- Setup Maps
 	local allMaps = ServerStorage.Maps:GetChildren()
 	for i = 1, 3 do
-		if #allMaps == 0 then
-			break
-		end
+		if #allMaps == 0 then break end
 		local randIndex = math.random(1, #allMaps)
 		local map = table.remove(allMaps, randIndex)
 		table.insert(self.OptionData.Maps, map.Name)

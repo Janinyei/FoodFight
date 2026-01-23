@@ -5,15 +5,13 @@ local GameManager = {}
 
 --Services-
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local Players = game:GetService("Players")
+local _Players = game:GetService("Players")
 
 --Utils--
 local Modules = ReplicatedStorage.Modules
 local Utils = Modules.Utils
 local Timer = require(Utils.Timer)
-
---Constants--
-local INTERMISSION_TIME = 3
+local GameConstants = require(Modules.Info.GameConstants)
 
 function GameManager:GetSpawnPoint()
 	local Spawns = workspace.Map.Spawns
@@ -40,7 +38,7 @@ function GameManager:InitModes(Core)
 end
 
 function GameManager:Init(Core)
-	self.Timer = Timer.new(INTERMISSION_TIME)
+	self.Timer = Timer.new(GameConstants.INTERMISSION_DURATION)
 	self.CurrentMode = nil
 	self.TimerEvent = Core:Get("SharedRemotes"):GetEvent("TimerEvent")
 	self.SpectateEvent = Core:Get("SharedRemotes"):GetEvent("SpectateEvent")
@@ -109,6 +107,7 @@ function GameManager:Start()
 		if action == "GetGameData" then
 			return self.GameData
 		end
+		return nil
 	end)
 end
 

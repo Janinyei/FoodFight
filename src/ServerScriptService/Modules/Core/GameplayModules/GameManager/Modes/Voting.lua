@@ -8,6 +8,7 @@ disable combat
 
 --janin 1/10/26
 
+local GameConstants = require(game.ReplicatedStorage.Modules.Info.GameConstants)
 local Voting = {}
 
 function Voting:InitMode(Core)
@@ -19,7 +20,7 @@ function Voting:InitMode(Core)
 	self.MatchStatsManager = Core:Get("MatchStatsManager")
 
 	self.Name = "Voting"
-	self.Duration = 5 --typical duration
+	self.Duration = GameConstants.VOTING_DURATION
 end
 
 function Voting:StartMode()
@@ -54,7 +55,7 @@ function Voting:OnComplete()
 
     print(self.TeamManager.Teams)
 
-	task.delay(1.5, function()
+	task.delay(GameConstants.POST_VOTE_DELAY, function()
 		--enable match stats--
 
 		self.MatchStatsManager:LoadAllPlayers()

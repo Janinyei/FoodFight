@@ -1,3 +1,4 @@
+local GameConstants = require(game.ReplicatedStorage.Modules.Info.GameConstants)
 local FFA = {}
 
 -- Services
@@ -13,6 +14,7 @@ function FFA:InitMode(Core)
 	self.FoodCombatManager = Core:Get("FoodCombatManager")
 	self.MatchStatsManager = Core:Get("MatchStatsManager")
 	self.CurrencyManager = Core:Get("CurrencyManager")
+	self.Duration = GameConstants.ROUND_DURATION
 	
 	self._connections = {}
 end

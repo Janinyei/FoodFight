@@ -11,6 +11,7 @@ teleport players
 
 --janin 1/10/26
 
+local GameConstants = require(game.ReplicatedStorage.Modules.Info.GameConstants)
 local Intermission = {}
 
 
@@ -22,9 +23,7 @@ function Intermission:InitMode(Core)
     self.AudioManager = Core:Get("AudioManager")
 
     self.Name = "Intermission"
-    self.Duration = 5 --typical duration
-
-
+    self.Duration = GameConstants.INTERMISSION_DURATION
 end
 
 

@@ -95,7 +95,7 @@ function Flag:Return()
 	print(self.TeamName .. " flag returned!")
 end
 
--- CTF Module
+local GameConstants = require(game.ReplicatedStorage.Modules.Info.GameConstants)
 
 function CTF:InitMode(Core)
 	self.Name = "CTF"
@@ -105,6 +105,7 @@ function CTF:InitMode(Core)
 	self.TeamManager = Core:Get("TeamManager")
 	self.FoodCombatManager = Core:Get("FoodCombatManager")
 	self.MatchStatsManager = Core:Get("MatchStatsManager")
+	self.Duration = GameConstants.ROUND_DURATION
 	
 	self.Flags = {}
 	self._connections = {}

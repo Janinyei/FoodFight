@@ -61,7 +61,7 @@ end
 
 function TeamManager:GetTeam(TargetPlayer:Player)
     for TeamName, Team in pairs(self.Teams) do
-        if Team.Players[TargetPlayer] then
+        if table.find(Team.Players, TargetPlayer) then
             return TeamName
         end
     end
